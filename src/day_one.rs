@@ -21,7 +21,23 @@ const NUMBERS: &'static [(&'static str, usize)] = &[
     ("nine", 9),
 ];
 
-fn parse_document_line(line: &str) -> Option<usize> {
+fn first_and_last_digit(line: &str) -> Option<usize> {
+    let mut res = None;
+    line.chars().into_iter().for_each(|char| {
+        if let Ok(v) = char.to_string().parse::<usize>() {
+            res = match res {
+                None => Some((v, v)),
+                Some((a, _)) => Some((a, v)),
+            };
+        }
+    });
+    match res {
+        Some((a, b)) => Some(a * 10 + b),
+        _ => None,
+    }
+}
+
+fn first_and_last_number(line: &str) -> Option<usize> {
     let first = NUMBERS
         .iter()
         .filter_map(|(s, n)| match line.find(s) {
@@ -44,16 +60,26 @@ fn parse_document_line(line: &str) -> Option<usize> {
     }
 }
 
-fn parse_trebuchet_calibration(document: &String) -> usize {
+fn parse_trebuchet_calibration(document: &String, parse_fn: fn(&str) -> Option<usize>) -> usize {
     document
         .lines()
-        .filter_map(|line| parse_document_line(line))
+        .filter_map(|line| parse_fn(line))
         .fold(0, |acc, x| acc + x)
 }
 
-pub fn run(input: &String) -> () {
-    let res = parse_trebuchet_calibration(input);
+pub fn run_part_one(input: &String) {
+    let res = parse_trebuchet_calibration(input, first_and_last_digit);
     println!("{}", res);
+}
+
+pub fn run_part_two(input: &String) {
+    let res = parse_trebuchet_calibration(input, first_and_last_number);
+    println!("{}", res);
+}
+
+pub fn run(input: &String) -> () {
+    run_part_one(&input);
+    run_part_two(&input);
 }
 
 #[cfg(test)]
@@ -61,14 +87,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_line() {
-        assert_eq!(parse_document_line("12"), Some(12));
-        assert_eq!(parse_document_line("a1b2c"), Some(12));
-        assert_eq!(parse_document_line("a1b"), Some(11));
-        assert_eq!(parse_document_line("ab"), None);
-        assert_eq!(parse_document_line("one"), Some(11));
-        assert_eq!(parse_document_line("onetwo"), Some(12));
-        assert_eq!(parse_document_line("abonecdtwoef"), Some(12));
-        assert_eq!(parse_document_line("onetwoone"), Some(11));
+    fn test_parse_first_and_last_digit() {
+        assert_eq!(first_and_last_digit("12"), Some(12));
+        assert_eq!(first_and_last_digit("a1b2c"), Some(12));
+        assert_eq!(first_and_last_digit("a1b"), Some(11));
+        assert_eq!(first_and_last_digit("ab"), None);
+    }
+
+    #[test]
+    fn test_parse_first_and_last_number() {
+        assert_eq!(first_and_last_number("a1b"), Some(11));
+        assert_eq!(first_and_last_number("ab"), None);
+        assert_eq!(first_and_last_number("one"), Some(11));
+        assert_eq!(first_and_last_number("onetwo"), Some(12));
+        assert_eq!(first_and_last_number("abonecdtwoef"), Some(12));
+        assert_eq!(first_and_last_number("onetwoone"), Some(11));
+        assert_eq!(first_and_last_number("onetwo1"), Some(11));
     }
 }
