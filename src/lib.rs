@@ -16,5 +16,6 @@ pub mod setup {
     }
 }
 
-pub mod day_one;
-pub mod day_two;
+pub mod day_01;
+pub mod day_02;
+pub mod day_03;
