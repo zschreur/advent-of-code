@@ -1,9 +1,4 @@
 pub mod setup {
-    pub fn read_file(path: &String) -> Result<String, Box<dyn std::error::Error>> {
-        let res = std::fs::read_to_string(&path)?;
-        Ok(res)
-    }
-
     pub struct Args {
         pub day: usize,
         pub puzzle_input: String,
@@ -11,10 +6,13 @@ pub mod setup {
     
     pub fn parse_args(args: &[String]) -> Result<Args, Box<dyn std::error::Error>> {
         let day = args[1].clone().parse::<usize>()?;
-        let file_path = args[2].clone();
 
-        let puzzle_input = read_file(&file_path)?;
-        Ok(Args{day, puzzle_input})
+        let puzzle_input_path = format!("./input/day-{:0>2}.txt", day);
+        let puzzle_input_path = std::path::Path::new(&puzzle_input_path);
+        match std::fs::read_to_string(puzzle_input_path) {
+            Ok(puzzle_input) => Ok(Args{day: day, puzzle_input}),
+            Err(e) => Err(Box::new(e))
+        }
     }
 }
 
