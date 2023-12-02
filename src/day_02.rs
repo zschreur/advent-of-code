@@ -101,41 +101,47 @@ fn fewest_possible_cubes(game: &Game) -> Set {
 fn power_of_set(s: &Set) -> usize {
     s.blue * s.green * s.red
 }
+pub struct Puzzle(String);
 
-fn run_part_one(puzzle_input: &str) {
-    let result = puzzle_input
-        .lines()
-        .filter_map(|line| parse_game(&line))
-        .filter(|game| {
-            is_game_possible(
-                game,
-                &Set {
-                    red: 12,
-                    green: 13,
-                    blue: 14,
-                },
-            )
-        })
-        .map(|game| game.id)
-        .sum::<usize>();
-
-    println!("Part 1: {}", result);
+impl Puzzle {
+    pub fn create(input: String) -> Box<dyn super::Puzzle> {
+        Box::new(Self(input))
+    }
 }
 
-fn run_part_two(puzzle_input: &str) {
-    let result = puzzle_input
-        .lines()
-        .filter_map(|line| parse_game(&line))
-        .map(|game| fewest_possible_cubes(&game))
-        .map(|set| power_of_set(&set))
-        .sum::<usize>();
+impl super::Puzzle for Puzzle {
+    fn run_part_one(&self) {
+        let result = self
+            .0
+            .lines()
+            .filter_map(|line| parse_game(&line))
+            .filter(|game| {
+                is_game_possible(
+                    game,
+                    &Set {
+                        red: 12,
+                        green: 13,
+                        blue: 14,
+                    },
+                )
+            })
+            .map(|game| game.id)
+            .sum::<usize>();
 
-    println!("Part 2: {}", result);
-}
+        println!("Part 1: {}", result);
+    }
 
-pub fn run(puzzle_input: &str) {
-    run_part_one(&puzzle_input);
-    run_part_two(&puzzle_input);
+    fn run_part_two(&self) {
+        let result = self
+            .0
+            .lines()
+            .filter_map(|line| parse_game(&line))
+            .map(|game| fewest_possible_cubes(&game))
+            .map(|set| power_of_set(&set))
+            .sum::<usize>();
+
+        println!("Part 2: {}", result);
+    }
 }
 
 #[cfg(test)]

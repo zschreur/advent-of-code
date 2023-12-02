@@ -1,14 +1,19 @@
-fn run_part_one(puzzle_input: &str) {
-    println!("Part 1: {}", "NOT IMPLEMENTED");
+pub struct Puzzle(String);
+
+impl Puzzle {
+    pub fn create(input: String) -> Box<dyn super::Puzzle> {
+        Box::new(Self(input))
+    }
 }
 
-fn run_part_two(puzzle_input: &str) {
-    println!("Part 2: {}", "NOT IMPLEMENTED");
-}
+impl super::Puzzle for Puzzle {
+    fn run_part_one(&self) {
+        println!("Part 1: {}", "NOT IMPLEMENTED");
+    }
 
-pub fn run(puzzle_input: &str) {
-    run_part_one(&puzzle_input);
-    run_part_two(&puzzle_input);
+    fn run_part_two(&self) {
+        println!("Part 2: {}", "NOT IMPLEMENTED");
+    }
 }
 
 #[cfg(test)]

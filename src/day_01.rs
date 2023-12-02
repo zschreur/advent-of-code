@@ -67,19 +67,24 @@ fn parse_trebuchet_calibration(document: &String, parse_fn: fn(&str) -> Option<u
         .fold(0, |acc, x| acc + x)
 }
 
-pub fn run_part_one(input: &String) {
-    let res = parse_trebuchet_calibration(input, first_and_last_digit);
-    println!("{}", res);
+pub struct Puzzle(String);
+
+impl Puzzle {
+    pub fn create(input: String) -> Box<dyn super::Puzzle> {
+        Box::new(Self(input))
+    }
 }
 
-pub fn run_part_two(input: &String) {
-    let res = parse_trebuchet_calibration(input, first_and_last_number);
-    println!("{}", res);
-}
+impl super::Puzzle for Puzzle {
+    fn run_part_one(&self) {
+        let result = parse_trebuchet_calibration(&self.0, first_and_last_digit);
+        println!("Part 1: {}", result);
+    }
 
-pub fn run(input: &String) -> () {
-    run_part_one(&input);
-    run_part_two(&input);
+    fn run_part_two(&self) {
+        let result = parse_trebuchet_calibration(&self.0, first_and_last_number);
+        println!("Part 2: {}", result);
+    }
 }
 
 #[cfg(test)]
