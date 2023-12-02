@@ -19,3 +19,4 @@ pub mod setup {
 }
 
 pub mod day_one;
+pub mod day_two;

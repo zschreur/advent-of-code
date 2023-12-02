@@ -1,4 +1,5 @@
 use advent_of_code_2023::day_one;
+use advent_of_code_2023::day_two;
 use advent_of_code_2023::setup::*;
 
 fn main() {
@@ -6,6 +7,9 @@ fn main() {
     match parse_args(&args) {
         Ok(Args { day, puzzle_input }) if day == 1 => {
             day_one::run(&puzzle_input);
+        },
+        Ok(Args{day,  puzzle_input}) if day == 2 => {
+            day_two::run(&puzzle_input);
         },
         Err(e) => eprintln!("{}", e),
         Ok(a) => eprintln!("Day not implemented: {}", a.day),
