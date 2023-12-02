@@ -46,8 +46,7 @@ fn parse_document_line(line: &str) -> Option<usize> {
 
 fn parse_trebuchet_calibration(document: &String) -> usize {
     document
-        .split("\n")
-        .into_iter()
+        .lines()
         .filter_map(|line| parse_document_line(line))
         .fold(0, |acc, x| acc + x)
 }
