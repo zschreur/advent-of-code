@@ -31,6 +31,24 @@ struct SchematicNumber {
     length: usize,
 }
 
+impl SchematicNumber {
+    fn is_adjacent(&self, pos: &Position) -> bool {
+        let adjacent_x = if self.pos.x >= pos.x {
+            self.pos.x - pos.x <= 1
+        } else {
+            pos.x - self.pos.x <= self.length
+        };
+
+        let adjacent_y = if self.pos.y >= pos.y {
+            self.pos.y - pos.y <= 1
+        } else {
+            pos.y - self.pos.y <= 1
+        };
+
+        adjacent_x && adjacent_y
+    }
+}
+
 #[derive(Debug)]
 struct EngineSchematic {
     symbols: Vec<Position>,
@@ -89,7 +107,12 @@ fn parse_board(puzzle_input: &str) -> EngineSchematic {
 impl super::Puzzle for Puzzle {
     fn run_part_one(&self) {
         let engine_schematic = parse_board(&self.puzzle_input);
-        println!("Part 1: {}", "NOT IMPLEMENTED");
+
+        let res = engine_schematic.schematic_numbers.iter().filter(|s| {
+            engine_schematic.symbols.iter().any(|symbol| s.is_adjacent(symbol))
+        }).fold(0, |acc, s| acc + s.value);
+
+        println!("Part 1: {}", res);
     }
 
     fn run_part_two(&self) {
@@ -114,7 +137,7 @@ mod tests {
 
     #[test]
     fn test_parse() {
-        let schematic = parse_board(&"12..34\n*.123.*\n...#/45");
+        let schematic = parse_board(&"12..34\n*.123*\n...#45");
         assert_eq!(schematic.schematic_numbers.len(), 4);
         assert_eq!(
             *schematic.schematic_numbers.get(0).unwrap(),
