@@ -25,34 +25,53 @@ struct Position {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-struct SchematicNumber {
-    value: usize,
+struct SchematicValue<T> {
+    value: T,
     pos: Position,
     length: usize,
 }
 
-impl SchematicNumber {
-    fn is_adjacent(&self, pos: &Position) -> bool {
-        let adjacent_x = if self.pos.x >= pos.x {
-            self.pos.x - pos.x <= 1
+impl<T> SchematicValue<T> {
+    fn is_adjacent<A>(&self, other: &SchematicValue<A>) -> bool {
+        let adjacent_x = if self.pos.x >= other.pos.x {
+            self.pos.x - other.pos.x <= 1
         } else {
-            pos.x - self.pos.x <= self.length
+            other.pos.x - self.pos.x <= self.length
         };
 
-        let adjacent_y = if self.pos.y >= pos.y {
-            self.pos.y - pos.y <= 1
+        let adjacent_y = if self.pos.y >= other.pos.y {
+            self.pos.y - other.pos.y <= 1
         } else {
-            pos.y - self.pos.y <= 1
+            other.pos.y - self.pos.y <= 1
         };
 
         adjacent_x && adjacent_y
     }
 }
 
+type SchematicNumber = SchematicValue<usize>;
+type SchematicSymbol = SchematicValue<char>;
+
+impl SchematicNumber {
+    fn create(value: usize, x: usize, y: usize, length: usize) -> Self {
+        Self {
+            value,
+            pos: Position { x, y },
+            length: length,
+        }
+    }
+}
+
+impl SchematicSymbol {
+    fn create(x: usize, y: usize, value: char) -> Self {
+        Self { value, pos: Position { x, y }, length: 1 }
+    }
+}
+
 #[derive(Debug)]
 struct EngineSchematic {
-    symbols: Vec<Position>,
-    schematic_numbers: Vec<SchematicNumber>,
+    symbols: Vec<SchematicSymbol>,
+    schematic_numbers: Vec<SchematicValue<usize>>,
 }
 
 fn parse_board(puzzle_input: &str) -> EngineSchematic {
@@ -62,7 +81,7 @@ fn parse_board(puzzle_input: &str) -> EngineSchematic {
         .collect::<Vec<Vec<char>>>();
     let board = Board::create(board);
 
-    let mut symbols: Vec<Position> = vec![];
+    let mut symbols: Vec<SchematicSymbol> = vec![];
     let mut schematic_numbers: Vec<SchematicNumber> = vec![];
 
     board.0.iter().enumerate().for_each(|(y, line)| {
@@ -75,11 +94,7 @@ fn parse_board(puzzle_input: &str) -> EngineSchematic {
                         s.length = s.length + 1;
                         s.value = s.value * 10 + d;
                     } else {
-                        current_number = Some(SchematicNumber {
-                            value: d,
-                            pos: Position { x, y },
-                            length: 1,
-                        })
+                        current_number = Some(SchematicNumber::create(d, x, y, 1));
                     }
                 }
                 _ => {
@@ -89,7 +104,7 @@ fn parse_board(puzzle_input: &str) -> EngineSchematic {
                     current_number = None;
 
                     if *c != '.' {
-                        symbols.push(Position { x, y })
+                        symbols.push(SchematicSymbol::create(x, y, *c))
                     }
                 }
             });
@@ -108,15 +123,21 @@ impl super::Puzzle for Puzzle {
     fn run_part_one(&self) {
         let engine_schematic = parse_board(&self.puzzle_input);
 
-        let res = engine_schematic.schematic_numbers.iter().filter(|s| {
-            engine_schematic.symbols.iter().any(|symbol| s.is_adjacent(symbol))
-        }).fold(0, |acc, s| acc + s.value);
+        let res = engine_schematic
+            .schematic_numbers
+            .iter()
+            .filter(|s| {
+                engine_schematic
+                    .symbols
+                    .iter()
+                    .any(|symbol| s.is_adjacent(symbol))
+            })
+            .fold(0, |acc, s| acc + s.value);
 
         println!("Part 1: {}", res);
     }
 
     fn run_part_two(&self) {
-        println!("Part 2: {}", "NOT IMPLEMENTED");
     }
 }
 
