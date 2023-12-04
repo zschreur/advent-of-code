@@ -141,7 +141,35 @@ impl super::Puzzle for Puzzle {
         println!("Part 1: {}", res);
     }
 
-    fn run_part_two(&self) {}
+    fn run_part_two(&self) {
+        let engine_schematic = parse_board(&self.puzzle_input);
+
+        let res = engine_schematic
+            .symbols
+            .iter()
+            .filter_map(|symbol| {
+                let neighbors = engine_schematic
+                    .schematic_numbers
+                    .iter()
+                    .filter_map(|number| {
+                        if symbol.is_adjacent(&number) {
+                            Some(number.value)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<usize>>();
+
+                if neighbors.len() == 2 {
+                    Some(neighbors.get(0).unwrap() * neighbors.get(1).unwrap())
+                } else {
+                    None
+                }
+            })
+            .fold(0, |acc, v| acc + v);
+
+        println!("Part 1: {}", res);
+    }
 }
 
 #[cfg(test)]
