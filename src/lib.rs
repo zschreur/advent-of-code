@@ -11,7 +11,7 @@ pub mod setup {
         let puzzle_input_path = std::path::Path::new(&puzzle_input_path);
         match std::fs::read_to_string(puzzle_input_path) {
             Ok(puzzle_input) => Ok(Args {
-                day: day,
+                day,
                 puzzle_input,
             }),
             Err(e) => Err(Box::new(e)),
@@ -37,3 +37,4 @@ impl PuzzleRunner {
 pub mod day_01;
 pub mod day_02;
 pub mod day_03;
+pub mod day_04;

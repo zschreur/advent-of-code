@@ -57,7 +57,7 @@ impl SchematicNumber {
         Self {
             value,
             pos: Position { x, y },
-            length: length,
+            length,
         }
     }
 }
