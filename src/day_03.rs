@@ -145,17 +145,6 @@ impl super::Puzzle for Puzzle {
 mod tests {
     use super::*;
 
-    const TEST_INPUT: &str = "467..114..\
-                    ...*......\
-                    ..35..633.\
-                    ......#...\
-                    617*......\
-                    .....+.58.\
-                    ..592.....\
-                    ......755.\
-                    ...$.*....\
-                    .664.598..";
-
     #[test]
     fn test_parse() {
         let schematic = parse_board(&"12..34\n*.123*\n...#45");
