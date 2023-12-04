@@ -34,7 +34,7 @@ struct SchematicValue<T> {
 impl<T> SchematicValue<T> {
     fn is_adjacent<A>(&self, other: &SchematicValue<A>) -> bool {
         let adjacent_x = if self.pos.x >= other.pos.x {
-            self.pos.x - other.pos.x <= 1
+            self.pos.x - other.pos.x <= other.length
         } else {
             other.pos.x - self.pos.x <= self.length
         };
@@ -63,8 +63,12 @@ impl SchematicNumber {
 }
 
 impl SchematicSymbol {
-    fn create(x: usize, y: usize, value: char) -> Self {
-        Self { value, pos: Position { x, y }, length: 1 }
+    fn create(value: char, x: usize, y: usize) -> Self {
+        Self {
+            value,
+            pos: Position { x, y },
+            length: 1,
+        }
     }
 }
 
@@ -104,7 +108,7 @@ fn parse_board(puzzle_input: &str) -> EngineSchematic {
                     current_number = None;
 
                     if *c != '.' {
-                        symbols.push(SchematicSymbol::create(x, y, *c))
+                        symbols.push(SchematicSymbol::create(*c, x, y))
                     }
                 }
             });
@@ -137,8 +141,7 @@ impl super::Puzzle for Puzzle {
         println!("Part 1: {}", res);
     }
 
-    fn run_part_two(&self) {
-    }
+    fn run_part_two(&self) {}
 }
 
 #[cfg(test)]
@@ -173,5 +176,26 @@ mod tests {
                 length: 3
             }
         );
+    }
+
+    #[test]
+    fn test_is_adjacent() {
+        let a = SchematicNumber::create(123, 5, 5, 3);
+
+        let b = SchematicSymbol::create('*', 5, 4);
+        assert!(a.is_adjacent(&b));
+        assert!(b.is_adjacent(&a));
+
+        let b = SchematicSymbol::create('*', 4, 5);
+        assert!(a.is_adjacent(&b));
+        assert!(b.is_adjacent(&a));
+
+        let b = SchematicSymbol::create('*', 4, 4);
+        assert!(a.is_adjacent(&b));
+        assert!(b.is_adjacent(&a));
+
+        let b = SchematicSymbol::create('*', 8, 6);
+        assert!(a.is_adjacent(&b));
+        assert!(b.is_adjacent(&a));
     }
 }
