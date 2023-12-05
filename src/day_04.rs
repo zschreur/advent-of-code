@@ -36,10 +36,7 @@ impl Puzzle {
             .map(|(numbers, winning)| {
                 let parse_numbers = |s: &str| -> std::collections::HashSet<u32> {
                     s.split_whitespace()
-                        .filter_map(|n| match n.parse::<u32>() {
-                            Ok(x) => Some(x),
-                            _ => None,
-                        })
+                        .filter_map(|n| n.parse::<u32>().ok())
                         .collect::<std::collections::HashSet<u32>>()
                 };
                 let numbers = parse_numbers(numbers);
