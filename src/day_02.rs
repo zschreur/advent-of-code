@@ -66,23 +66,6 @@ fn parse_game(game: &str) -> Option<Game> {
     })
 }
 
-fn is_game_possible(game: &Game, constraint: &Set) -> bool {
-    let s = game.sets.iter().fold(
-        Set {
-            blue: 0,
-            red: 0,
-            green: 0,
-        },
-        |acc, set| Set {
-            blue: acc.blue.max(set.blue),
-            green: acc.green.max(set.green),
-            red: acc.red.max(set.red),
-        },
-    );
-
-    s.blue <= constraint.blue && s.red <= constraint.red && s.green <= constraint.green
-}
-
 fn fewest_possible_cubes(game: &Game) -> Set {
     game.sets.iter().fold(
         Set {
@@ -96,6 +79,12 @@ fn fewest_possible_cubes(game: &Game) -> Set {
             red: acc.red.max(set.red),
         },
     )
+}
+
+fn is_game_possible(game: &Game, constraint: &Set) -> bool {
+    let s = fewest_possible_cubes(&game);
+
+    s.blue <= constraint.blue && s.red <= constraint.red && s.green <= constraint.green
 }
 
 fn power_of_set(s: &Set) -> usize {
