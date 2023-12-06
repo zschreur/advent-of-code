@@ -225,7 +225,24 @@ impl super::Puzzle for Puzzle {
         println!("Part 1: {}", min_location);
     }
     fn run_part_two(&self) {
-        println!("Part 2: {}", "NOT IMPLEMENTED");
+        let min = self
+            .seeds
+            .windows(2)
+            .step_by(2)
+            .filter_map(|window| {
+                if let [start, length] = &window {
+                    let range = *start..(*start + *length);
+                    let all_seed_info = range
+                        .map(|s| self.almanac.seed_info(s)[6])
+                        .collect::<Vec<usize>>();
+                    let min_location = all_seed_info.iter().min().unwrap();
+                    Some(*min_location)
+                } else {
+                    None
+                }
+            })
+            .min();
+        println!("Part 2: {}", min.unwrap());
     }
 }
 
@@ -276,6 +293,26 @@ humidity-to-location map:
             .collect::<Vec<[usize; 7]>>();
         let min_location = all_seed_info.iter().min_by(|x, y| x[6].cmp(&y[6])).unwrap();
         assert_eq!(min_location[6], 35);
+
+        let min = seeds
+            .windows(2)
+            .step_by(2)
+            .filter_map(|window| {
+                if let [start, length] = &window {
+                    let range = *start..(*start + *length);
+                    dbg!(&range);
+                    let all_seed_info = range
+                        .map(|s| almanac.seed_info(s)[6])
+                        .collect::<Vec<usize>>();
+                    let min_location = all_seed_info.iter().min().unwrap();
+                    Some(*min_location)
+                } else {
+                    None
+                }
+            })
+            .min();
+
+        assert_eq!(min.unwrap(), 35);
     }
 
     #[test]
