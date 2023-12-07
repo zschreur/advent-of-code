@@ -19,8 +19,60 @@ impl HandCalculator {
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-struct BasicHand(u128);
+struct JokerHand(u128);
+impl JokerHand {
+    fn parse_rank(s: &str) -> u128 {
+        let mut cards = s
+            .chars()
+            .fold(std::collections::HashMap::new(), |mut acc, c| {
+                if let Some(k) = acc.get_mut(&c) {
+                    *k += 1u8;
+                } else {
+                    acc.insert(c, 1);
+                }
 
+                acc
+            });
+
+        let joker_count = *(cards.get(&'J').unwrap_or(&0));
+        if let Some((card, count)) = cards
+            .iter()
+            .filter(|(card, _)| *card != &'J')
+            .max_by(|(_, x), (_, y)| x.cmp(y))
+            .map(|(card, count)| (*card, *count))
+        {
+            if let Some(c) = cards.get_mut(&card) {
+                *c = joker_count + count;
+                cards.remove(&'J');
+            }
+        }
+
+        let card_counts = cards.values().map(|v| *v).collect::<Vec<u8>>();
+        match card_counts.len() {
+            1 => 6,
+            2 => {
+                let first_card = card_counts[0];
+                if first_card == 1 || first_card == 4 {
+                    5
+                } else {
+                    4
+                }
+            }
+            3 => {
+                if card_counts.contains(&3) {
+                    3
+                } else {
+                    2
+                }
+            }
+            4 => 1,
+            _ => 0,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+struct BasicHand(u128);
 impl BasicHand {
     fn parse_rank(s: &str) -> u128 {
         let cards = s
@@ -81,11 +133,40 @@ impl FromStr for BasicHand {
                     _ => None,
                 }
             })
-            .reduce(|acc, d| (acc << 4) + d)
+            .reduce(|acc, d| (acc << 4) | d)
             .ok_or(ParseHandError)?;
 
-        let hand = (((rank << 20) + cards) << 10) + bid;
+        let hand = (((rank << 20) | cards) << 10) | bid;
         Ok(BasicHand(hand))
+    }
+}
+
+impl FromStr for JokerHand {
+    type Err = ParseHandError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (cards, bid) = s.split_at(5);
+        let bid = bid.trim().parse::<u128>().map_err(|_| ParseHandError)?;
+
+        let rank = JokerHand::parse_rank(&cards);
+        let cards = cards
+            .chars()
+            .filter_map(|c| -> Option<u128> {
+                match c {
+                    'A' => Some(0xE),
+                    'K' => Some(0xD),
+                    'Q' => Some(0xC),
+                    'J' => Some(0x0),
+                    'T' => Some(0xA),
+                    d if d.is_ascii_digit() => Some(d as u128 - '0' as u128),
+                    _ => None,
+                }
+            })
+            .reduce(|acc, d| (acc << 4) | d)
+            .ok_or(ParseHandError)?;
+
+        let hand = (((rank << 20) | cards) << 10) | bid;
+        Ok(JokerHand(hand))
     }
 }
 
@@ -129,7 +210,13 @@ impl super::Puzzle for Puzzle {
         println!("Part 1: {}", res);
     }
     fn run_part_two(&self) {
-        let res = "NOT IMPLEMENTED";
+        let res = {
+            let mut game = self.get_game::<JokerHand>();
+            game.0.sort();
+            game.0.iter().enumerate().fold(0u128, |acc, (index, h)| {
+                ((index as u128 + 1) * HandCalculator::get_bid(h.0)) + acc
+            })
+        };
 
         println!("Part 2: {}", res);
     }
