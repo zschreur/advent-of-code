@@ -52,33 +52,46 @@ fn parse_map(input: &str) -> Result<(Vec<Direction>, HashMap<u128, (u128, u128)>
 }
 
 #[derive(Debug)]
-struct PartOneError;
-fn run_part_one(
-    directions: Vec<Direction>,
-    map: HashMap<u128, (u128, u128)>,
-) -> Result<u128, PartOneError> {
-    let mut current = map.get(&AAA).ok_or(PartOneError)?;
+struct SearchError;
+fn steps_to_reach_node(
+    start_node: u128,
+    directions: &Vec<Direction>,
+    map: &HashMap<u128, (u128, u128)>,
+    cmp: fn(u128) -> bool,
+) -> Result<u128, SearchError> {
+    let mut current = map.get(&start_node).ok_or(SearchError)?;
     let res = directions
         .iter()
         .cycle()
         .enumerate()
         .find_map(|(index, direction)| {
-            // let next = map.
             let next = match direction {
                 Direction::Left => current.0,
                 _ => current.1,
             };
 
-            if next == ZZZ {
+            if cmp(next) {
                 Some(index)
             } else {
                 current = map.get(&next)?;
                 None
             }
         })
-        .ok_or(PartOneError)?;
+        .ok_or(SearchError)?;
 
     Ok(res as u128 + 1)
+}
+
+#[derive(Debug)]
+struct PartOneError;
+fn run_part_one(
+    directions: Vec<Direction>,
+    map: HashMap<u128, (u128, u128)>,
+) -> Result<u128, PartOneError> {
+    let cmp = |v: u128| v == ZZZ;
+    let res = steps_to_reach_node(AAA, &directions, &map, cmp).map_err(|_| PartOneError)?;
+
+    Ok(res)
 }
 
 pub struct Puzzle(String);
@@ -92,6 +105,30 @@ impl Puzzle {
     }
 }
 
+fn gcd(a: u128, nums: &[u128]) -> u128 {
+    if let Some(&b) = nums.first() {
+        let c = (1..=a.min(b))
+            .rev()
+            .find(|v| {
+                a % v == 0 && b % v == 0
+            })
+            .unwrap_or(1);
+        gcd(c, nums.split_at(1).1)
+    } else {
+        a
+    }
+}
+
+fn lcm(a: u128, nums: &[u128]) -> u128 {
+    if let Some(&b) = nums.first() {
+        let foo = gcd(a, &[b]);
+        let c = a * (b / foo);
+        lcm(c, nums.split_at(1).1)
+    } else {
+        a
+    }
+}
+
 impl super::Puzzle for Puzzle {
     fn run_part_one(&self) {
         let (directions, map) = parse_map(&self.0).expect("Issue parsing input");
@@ -99,7 +136,26 @@ impl super::Puzzle for Puzzle {
         println!("Part 1: {}", res);
     }
 
-    fn run_part_two(&self) {}
+    fn run_part_two(&self) {
+        let (directions, map) = parse_map(&self.0).expect("Issue parsing input");
+        let starting_nodes = map
+            .keys()
+            .filter(|&k| (k & 0xFF as u128) == 0)
+            .collect::<Vec<&u128>>();
+        let counts = starting_nodes
+            .iter()
+            .filter_map(|&k| {
+                steps_to_reach_node(*k, &directions, &map, |v| (v & 0xFF as u128) == Z)
+                    .map_err(|_| PartOneError)
+                    .ok()
+            })
+            .collect::<Vec<u128>>();
+
+        let a = counts.first().unwrap();
+        let b = counts.split_at(1).1;
+        let res = lcm(*a, &b);
+        println!("Part 2: {}", res);
+    }
 }
 
 #[cfg(test)]
@@ -116,5 +172,12 @@ ZZZ = (ZZZ, ZZZ";
     fn test() {
         let (a, b) = parse_map(&SAMPLE_INPUT).unwrap();
         assert_eq!(run_part_one(a, b).unwrap(), 6);
+    }
+
+    #[test]
+    fn test_lcm() {
+        assert_eq!(lcm(2, &vec![3]), 6);
+        assert_eq!(lcm(21, &vec![6]), 42);
+        assert_eq!(lcm(1, &vec![3, 8, 10]), 120);
     }
 }
