@@ -1,4 +1,4 @@
-use std::collections::{HashSet};
+use std::collections::HashSet;
 
 pub struct Puzzle(Vec<Vec<i32>>);
 
@@ -31,7 +31,18 @@ impl super::Puzzle for Puzzle {
         println!("Part 1: {}", res.unwrap());
     }
 
-    fn run_part_two(&self) {}
+    fn run_part_two(&self) {
+        let res = self
+            .0
+            .iter()
+            .map(|seq| {
+                let mut v = seq.clone();
+                v.reverse();
+                find_next_value(&v)
+            })
+            .reduce(|acc, v| acc + v);
+        println!("Part 2: {}", res.unwrap());
+    }
 }
 
 fn find_next_value(sequence: &Vec<i32>) -> i32 {
@@ -71,5 +82,18 @@ mod tests {
         assert_eq!(find_next_value(&vec![0, 3, 6, 9, 12, 15]), 18);
         assert_eq!(find_next_value(&vec![1, 3, 6, 10, 15, 21]), 28);
         assert_eq!(find_next_value(&vec![10, 13, 16, 21, 30, 45]), 68);
+    }
+
+    #[test]
+    fn test_find_prev_value() {
+        let mut v = vec![0, 3, 6, 9, 12, 15];
+        v.reverse();
+        assert_eq!(find_next_value(&v), -3);
+        let mut v = vec![1, 3, 6, 10, 15, 21];
+        v.reverse();
+        assert_eq!(find_next_value(&v), 0);
+        let mut v = vec![10, 13, 16, 21, 30, 45];
+        v.reverse();
+        assert_eq!(find_next_value(&v), 5);
     }
 }
