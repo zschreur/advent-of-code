@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum Pipe {
     NorthSouth,
     EastWest,
@@ -229,6 +229,94 @@ fn find_loop_points(diagram: &Diagram) -> HashSet<Position> {
     pipe_navigator.visited
 }
 
+enum State {
+    Inside,
+    Outside,
+}
+
+fn find_points_on_row(
+    row: &Vec<Option<Pipe>>,
+    loop_points: &HashSet<Position>,
+    y: usize,
+) -> HashSet<Position> {
+    let mut collision: Option<Pipe> = None;
+    let mut state = State::Outside;
+    let mut points = HashSet::new();
+
+    for (x, pipe) in row.iter().enumerate() {
+        if loop_points.contains(&Position { x, y }) {
+            let pipe = pipe.expect("Unexpected None loop point");
+            match pipe {
+                Pipe::NorthSouth => {
+                    state = match state {
+                        State::Inside => State::Outside,
+                        State::Outside => State::Inside,
+                    };
+                    collision = None;
+                }
+                Pipe::NorthEast | Pipe::SouthEast => {
+                    collision = Some(pipe);
+                }
+                Pipe::NorthWest if { collision == Some(Pipe::SouthEast) } => {
+                    state = match state {
+                        State::Inside => State::Outside,
+                        State::Outside => State::Inside,
+                    };
+                    collision = None;
+                }
+                Pipe::SouthWest if { collision == Some(Pipe::NorthEast) } => {
+                    state = match state {
+                        State::Inside => State::Outside,
+                        State::Outside => State::Inside,
+                    };
+                    collision = None;
+                }
+                Pipe::NorthWest | Pipe::SouthWest => {
+                    if collision.is_none() {
+                        panic!("Unexpected {:?} when collision is None", pipe)
+                    }
+                    collision = None;
+                }
+                Pipe::EastWest => {
+                    if collision.is_none() {
+                        panic!("Unexpected {:?} when collision is {:?}", pipe, collision);
+                    }
+                }
+            }
+        } else {
+            match state {
+                State::Inside => {
+                    points.insert(Position { x, y });
+                }
+                _ => (),
+            }
+        }
+    }
+
+    points
+}
+
+struct LoopScanner<'a> {
+    loop_points: &'a HashSet<Position>,
+    map: &'a Map,
+}
+
+impl<'a> LoopScanner<'a> {
+    fn new(loop_points: &'a HashSet<Position>, map: &'a Map) -> Self {
+        Self { loop_points, map }
+    }
+
+    fn find_enclosed_points(&self) -> HashSet<Position> {
+        let mut points = HashSet::new();
+        for (y, row) in self.map.iter().enumerate() {
+            let points_on_row = find_points_on_row(&row, &self.loop_points, y);
+            points.extend(points_on_row.iter());
+        }
+
+        points
+    }
+}
+
 pub struct Puzzle(String);
 
 impl Puzzle {
@@ -251,7 +339,15 @@ impl super::Puzzle for Puzzle {
         println!("Part 1: {}", length / 2);
     }
 
-    fn run_part_two(&self) {}
+    fn run_part_two(&self) {
+        let diagram = parse_diagram(&self.0);
+        let loop_points = find_loop_points(&diagram);
+        let loop_scanner = LoopScanner::new(&loop_points, &diagram.map);
+        let enclosed_points = loop_scanner.find_enclosed_points();
+        let res = enclosed_points.len();
+
+        println!("Part 2: {}", res);
+    }
 }
 
 #[cfg(test)]
