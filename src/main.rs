@@ -13,6 +13,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         7 => Some(day_07::Puzzle::create(args.puzzle_input)),
         8 => Some(day_08::Puzzle::create(args.puzzle_input)),
         9 => Some(day_09::Puzzle::create(args.puzzle_input)),
+        10 => Some(day_10::Puzzle::create(args.puzzle_input)),
         d => {
             eprintln!("Day not implemented: {}", d);
             None
