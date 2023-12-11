@@ -229,66 +229,26 @@ fn find_loop_points(diagram: &Diagram) -> HashSet<Position> {
     pipe_navigator.visited
 }
 
-enum State {
-    Inside,
-    Outside,
-}
-
 fn find_points_on_row(
     row: &Vec<Option<Pipe>>,
     loop_points: &HashSet<Position>,
     y: usize,
 ) -> HashSet<Position> {
-    let mut collision: Option<Pipe> = None;
-    let mut state = State::Outside;
+    let mut inside = false;
     let mut points = HashSet::new();
 
     for (x, pipe) in row.iter().enumerate() {
         if loop_points.contains(&Position { x, y }) {
             let pipe = pipe.expect("Unexpected None loop point");
             match pipe {
-                Pipe::NorthSouth => {
-                    state = match state {
-                        State::Inside => State::Outside,
-                        State::Outside => State::Inside,
-                    };
-                    collision = None;
-                }
-                Pipe::NorthEast | Pipe::SouthEast => {
-                    collision = Some(pipe);
-                }
-                Pipe::NorthWest if { collision == Some(Pipe::SouthEast) } => {
-                    state = match state {
-                        State::Inside => State::Outside,
-                        State::Outside => State::Inside,
-                    };
-                    collision = None;
-                }
-                Pipe::SouthWest if { collision == Some(Pipe::NorthEast) } => {
-                    state = match state {
-                        State::Inside => State::Outside,
-                        State::Outside => State::Inside,
-                    };
-                    collision = None;
-                }
-                Pipe::NorthWest | Pipe::SouthWest => {
-                    if collision.is_none() {
-                        panic!("Unexpected {:?} when collision is None", pipe)
-                    }
-                    collision = None;
-                }
-                Pipe::EastWest => {
-                    if collision.is_none() {
-                        panic!("Unexpected {:?} when collision is {:?}", pipe, collision);
-                    }
-                }
-            }
-        } else {
-            match state {
-                State::Inside => {
-                    points.insert(Position { x, y });
+                Pipe::NorthSouth | Pipe::SouthEast | Pipe::SouthWest => {
+                    inside = !inside;
                 }
                 _ => (),
+            }
+        } else {
+            if inside {
+                points.insert(Position { x, y });
             }
         }
     }
