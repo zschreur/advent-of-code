@@ -124,7 +124,7 @@ impl super::Puzzle for Puzzle {
         let image = parse_image(&self.0).expect("Issue parsing image");
         let total_distance = galaxy_distances(&image, 1_000_000);
 
-        println!("Part 1: {}", total_distance);
+        println!("Part 2: {}", total_distance);
     }
 }
 
