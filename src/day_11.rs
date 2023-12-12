@@ -97,9 +97,9 @@ fn galaxy_distances(image: &Image, expansion_size: u128) -> u128 {
             let expanded_column_count = image.expanded_columns.range(min_x..max_x).count() as u128;
             let expanded_row_count = image.expanded_rows.range(min_y..max_y).count() as u128;
 
-            let dx =
-                max_x - min_x + ((expansion_size * expanded_column_count) - expanded_column_count);
-            let dy = max_y - min_y + ((expansion_size * expanded_row_count) - expanded_row_count);
+            let dx = max_x - min_x + expanded_column_count * (expansion_size - 1);
+            let dy = max_y - min_y + expanded_row_count * (expansion_size - 1);
+
             let path_length = (dx.min(dy) * 2) + dx.max(dy) - dx.min(dy);
             sum += path_length;
         }
