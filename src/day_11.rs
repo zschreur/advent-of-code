@@ -4,7 +4,6 @@ use std::collections::HashSet;
 enum ImageData {
     Galaxy,
     Empty,
-    Expanded,
 }
 
 struct Position {
