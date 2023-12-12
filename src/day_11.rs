@@ -81,7 +81,7 @@ impl Puzzle {
     }
 }
 
-fn galaxy_distances(image: &Image) -> u128 {
+fn galaxy_distances(image: &Image, expansion_size: u128) -> u128 {
     let galaxies = find_galaxies(&image.image_data);
     let mut sum: u128 = 0;
     for (i, Position { x: x0, y: y0 }) in galaxies.iter().enumerate() {
@@ -102,8 +102,9 @@ fn galaxy_distances(image: &Image) -> u128 {
                 .filter(|y| image.expanded_rows.contains(&y))
                 .count() as u128;
 
-            let dx = max_x - min_x + ((2 * expanded_column_count) - expanded_column_count);
-            let dy = max_y - min_y + ((2 * expanded_row_count) - expanded_row_count);
+            let dx =
+                max_x - min_x + ((expansion_size * expanded_column_count) - expanded_column_count);
+            let dy = max_y - min_y + ((expansion_size * expanded_row_count) - expanded_row_count);
             let path_length = (dx.min(dy) * 2) + dx.max(dy) - dx.min(dy);
             sum += path_length;
         }
@@ -115,12 +116,17 @@ fn galaxy_distances(image: &Image) -> u128 {
 impl super::Puzzle for Puzzle {
     fn run_part_one(&self) {
         let image = parse_image(&self.0).expect("Issue parsing image");
-        let total_distance = galaxy_distances(&image);
+        let total_distance = galaxy_distances(&image, 2);
 
         println!("Part 1: {}", total_distance);
     }
 
-    fn run_part_two(&self) {}
+    fn run_part_two(&self) {
+        let image = parse_image(&self.0).expect("Issue parsing image");
+        let total_distance = galaxy_distances(&image, 1_000_000);
+
+        println!("Part 1: {}", total_distance);
+    }
 }
 
 #[cfg(test)]
