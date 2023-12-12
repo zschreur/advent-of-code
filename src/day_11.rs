@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 
 #[derive(PartialEq, Clone, Copy, Debug)]
 enum ImageData {
@@ -15,13 +15,13 @@ use ImageData::*;
 
 struct Image {
     image_data: Vec<Vec<ImageData>>,
-    expanded_rows: HashSet<u128>,
-    expanded_columns: HashSet<u128>,
+    expanded_rows: BTreeSet<u128>,
+    expanded_columns: BTreeSet<u128>,
 }
 
 fn parse_image(input: &str) -> Option<Image> {
-    let mut expanded_rows = HashSet::new();
-    let mut expanded_columns = HashSet::new();
+    let mut expanded_rows = BTreeSet::new();
+    let mut expanded_columns = BTreeSet::new();
     let image_data = input.lines().enumerate().fold(
         Vec::<Vec<ImageData>>::new(),
         |mut image, (row_index, line)| {
