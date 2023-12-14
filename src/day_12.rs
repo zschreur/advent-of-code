@@ -3,20 +3,8 @@ use std::str::FromStr;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 enum Condition {
-    Operational,
     Broken,
     Unknown,
-}
-
-fn create_groups(spings: &Vec<Condition>) -> Vec<Vec<Condition>> {
-    spings
-        .split(|c| match c {
-            Condition::Operational => true,
-            _ => false,
-        })
-        .map(|g| g.to_owned())
-        .filter(|g| g.len() > 0)
-        .collect::<Vec<Vec<Condition>>>()
 }
 
 struct Record {
@@ -30,7 +18,7 @@ impl FromStr for Record {
     type Err = ParseRecordError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (spings, code) = {
+        let (springs, code) = {
             let mut split = s.split_whitespace();
             let spings = split.next().ok_or(ParseRecordError)?;
             let code = split.next().ok_or(ParseRecordError)?;
@@ -42,20 +30,21 @@ impl FromStr for Record {
             .map(|c| c.parse::<usize>().expect("Issue parsing code"))
             .collect::<Vec<usize>>();
 
-        let springs = spings
-            .chars()
-            .map(|c| match c {
-                '.' => Condition::Operational,
-                '#' => Condition::Broken,
-                '?' => Condition::Unknown,
-                _ => panic!("Issue parsing spings"),
+        let spring_groups = springs
+            .split('.')
+            .map(|s| {
+                s.chars()
+                    .map(|c| match c {
+                        '#' => Condition::Broken,
+                        '?' => Condition::Unknown,
+                        _ => panic!("Issue parsing spings"),
+                    })
+                    .collect::<Vec<Condition>>()
             })
-            .collect::<Vec<Condition>>();
-
-        let groups = create_groups(&springs);
+            .collect::<Vec<Vec<Condition>>>();
 
         Ok(Record {
-            spring_groups: groups,
+            spring_groups,
             code,
         })
     }
@@ -116,7 +105,6 @@ fn count_arrangements(
                 offset += 1;
                 continue;
             }
-            Some(Condition::Operational) => panic!("Unexpected operational in group"),
             _ => (),
         };
         match group.get(offset + block) {
@@ -124,7 +112,6 @@ fn count_arrangements(
                 offset += 1;
                 continue;
             }
-            Some(Condition::Operational) => panic!("Unexpected operational in group"),
             _ => (),
         }
 
