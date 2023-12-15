@@ -33,13 +33,22 @@ impl Pattern {
         Self::new(horizontal, vertical)
     }
 
+    fn parse_all_puzzles(input: &str) -> Vec<Self> {
+        input
+            .split("\n\n")
+            .map(|puzzle| Self::parse(puzzle))
+            .collect::<Vec<Self>>()
+    }
+
     fn find_reflection(&self) -> (Option<usize>, Option<usize>) {
         let f = |v: &Vec<u128>| -> Option<usize> {
-            dbg!(&v);
             match v.iter().enumerate().skip(1).find(|(index, _)| {
                 let mut offset = 0;
                 loop {
-                    let left = v.get(index - offset - 1);
+                    let left = index
+                        .checked_sub(offset)
+                        .and_then(|i| i.checked_sub(1))
+                        .and_then(|i| v.get(i));
                     let right = v.get(index + offset);
                     if let (Some(left), Some(right)) = (left, right) {
                         match left ^ right {
@@ -81,9 +90,33 @@ impl Puzzle {
 }
 
 impl super::Puzzle for Puzzle {
-    fn run_part_one(&self) {}
+    fn run_part_one(&self) {
+        let patterns = Pattern::parse_all_puzzles(&self.0);
+        let res = patterns.iter().fold(0u128, |acc, pattern| {
+            acc + match pattern.find_reflection() {
+                (Some(h), None) => h as u128 * 100,
+                (None, Some(v)) => v as u128,
+                _ => 0,
+            }
+        });
 
-    fn run_part_two(&self) {}
+        println!("Part 1: {}", res);
+    }
+
+    fn run_part_two(&self) {
+        /*
+        let patterns = Pattern::parse_all_puzzles(&self.0);
+        let res = patterns.iter().fold(0u128, |acc, pattern| {
+            acc + match pattern.find_reflection() {
+                (Some(h), None) => h as u128 * 100,
+                (None, Some(v)) => v as u128,
+                _ => 0,
+            }
+        });
+
+        println!("Part 2: {}", res);
+        */
+    }
 }
 
 #[cfg(test)]
@@ -105,6 +138,12 @@ mod tests {
 #####.##.
 ..##..###
 #....#..#";
+
+    #[test]
+    fn test_parse_sample_input() {
+        let p = Pattern::parse_all_puzzles(SAMPLE_INPUT);
+        assert_eq!(p.len(), 2);
+    }
 
     #[test]
     fn test_parse_single_puzzle() {
