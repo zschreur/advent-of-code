@@ -40,10 +40,11 @@ impl Pattern {
             .collect::<Vec<Self>>()
     }
 
-    fn find_reflection(&self) -> (Option<usize>, Option<usize>) {
+    fn find_reflection(&self, expected_smudge_count: u32) -> (Option<usize>, Option<usize>) {
         let f = |v: &Vec<u128>| -> Option<usize> {
             match v.iter().enumerate().skip(1).find(|(index, _)| {
                 let mut offset = 0;
+                let mut smudge_count = 0;
                 loop {
                     let left = index
                         .checked_sub(offset)
@@ -51,12 +52,13 @@ impl Pattern {
                         .and_then(|i| v.get(i));
                     let right = v.get(index + offset);
                     if let (Some(left), Some(right)) = (left, right) {
-                        match left ^ right {
-                            0 => offset += 1,
+                        smudge_count += (left ^ right).count_ones();
+                        match smudge_count <= expected_smudge_count {
+                            true => offset += 1,
                             _ => break,
                         }
                     } else {
-                        return true;
+                        return smudge_count == expected_smudge_count;
                     }
                 }
 
@@ -93,7 +95,7 @@ impl super::Puzzle for Puzzle {
     fn run_part_one(&self) {
         let patterns = Pattern::parse_all_puzzles(&self.0);
         let res = patterns.iter().fold(0u128, |acc, pattern| {
-            acc + match pattern.find_reflection() {
+            acc + match pattern.find_reflection(0) {
                 (Some(h), None) => h as u128 * 100,
                 (None, Some(v)) => v as u128,
                 _ => 0,
@@ -104,10 +106,9 @@ impl super::Puzzle for Puzzle {
     }
 
     fn run_part_two(&self) {
-        /*
         let patterns = Pattern::parse_all_puzzles(&self.0);
         let res = patterns.iter().fold(0u128, |acc, pattern| {
-            acc + match pattern.find_reflection() {
+            acc + match pattern.find_reflection(1) {
                 (Some(h), None) => h as u128 * 100,
                 (None, Some(v)) => v as u128,
                 _ => 0,
@@ -115,7 +116,6 @@ impl super::Puzzle for Puzzle {
         });
 
         println!("Part 2: {}", res);
-        */
     }
 }
 
@@ -188,7 +188,7 @@ mod tests {
 #.#.##.#.",
         );
 
-        assert_eq!(p.find_reflection(), (None, Some(5)));
+        assert_eq!(p.find_reflection(0), (None, Some(5)));
 
         let p = Pattern::parse(
             "#...##..#
@@ -200,6 +200,33 @@ mod tests {
 #....#..#",
         );
 
-        assert_eq!(p.find_reflection(), (Some(4), None));
+        assert_eq!(p.find_reflection(0), (Some(4), None));
+    }
+
+    #[test]
+    fn test_find_reflection_with_correction() {
+        let p = Pattern::parse(
+            "#.##..##.
+..#.##.#.
+##......#
+##......#
+..#.##.#.
+..##..##.
+#.#.##.#.",
+        );
+
+        assert_eq!(p.find_reflection(1), (Some(3), None));
+
+        let p = Pattern::parse(
+            "#...##..#
+#....#..#
+..##..###
+#####.##.
+#####.##.
+..##..###
+#....#..#",
+        );
+
+        assert_eq!(p.find_reflection(1), (Some(1), None));
     }
 }
