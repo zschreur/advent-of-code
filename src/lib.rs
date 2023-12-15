@@ -30,16 +30,15 @@ pub struct PuzzleRunner {
 impl PuzzleRunner {
     pub fn run(puzzle: Box<dyn Puzzle>) {
         use std::time::Instant;
-        let now = Instant::now();
+        let t0 = Instant::now();
         puzzle.run_part_one();
-        let elapsed = now.elapsed();
-        println!("Part 1 took: {:.2?}", elapsed);
-        println!();
-
-        let now = Instant::now();
+        let t0_elapsed = t0.elapsed();
+        let t1 = Instant::now();
         puzzle.run_part_two();
-        let elapsed = now.elapsed();
-        println!("Part 2 took: {:.2?}", elapsed);
+        let t1_elapsed = t1.elapsed();
+        println!("Part 1 took: {:.2?}", t0_elapsed);
+        println!("Part 2 took: {:.2?}", t1_elapsed);
+        println!("Total time: {:.2?}", t0_elapsed + t1_elapsed);
     }
 }
 
