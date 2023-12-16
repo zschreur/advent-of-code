@@ -1,8 +1,8 @@
 #[derive(Debug, PartialEq)]
-struct Pattern(Vec<u128>, Vec<u128>);
+struct Pattern(Vec<u32>, Vec<u32>);
 
 impl Pattern {
-    fn new(horizontal: Vec<u128>, vertical: Vec<u128>) -> Self {
+    fn new(horizontal: Vec<u32>, vertical: Vec<u32>) -> Self {
         Self(horizontal, vertical)
     }
 
@@ -17,19 +17,19 @@ impl Pattern {
                         '.' => acc << 1,
                         _ => panic!("Invalid character"),
                     })
-                    .collect::<Vec<u128>>()
+                    .collect::<Vec<u32>>()
             },
         );
         let horizontal = input
             .lines()
             .map(|line| {
-                line.chars().fold(0u128, |acc, c| match c {
+                line.chars().fold(0u32, |acc, c| match c {
                     '#' => acc << 1 | 1,
                     '.' => acc << 1,
                     _ => panic!("Invalid character"),
                 })
             })
-            .collect::<Vec<u128>>();
+            .collect::<Vec<u32>>();
         Self::new(horizontal, vertical)
     }
 
@@ -41,7 +41,7 @@ impl Pattern {
     }
 
     fn find_reflection(&self, expected_smudge_count: u32) -> (Option<usize>, Option<usize>) {
-        let f = |v: &Vec<u128>| -> Option<usize> {
+        let f = |v: &Vec<u32>| -> Option<usize> {
             match v.iter().enumerate().skip(1).find(|(index, _)| {
                 let mut offset = 0;
                 let mut smudge_count = 0;
@@ -94,10 +94,10 @@ impl Puzzle {
 impl super::Puzzle for Puzzle {
     fn run_part_one(&self) {
         let patterns = Pattern::parse_all_puzzles(&self.0);
-        let res = patterns.iter().fold(0u128, |acc, pattern| {
+        let res = patterns.iter().fold(0u32, |acc, pattern| {
             acc + match pattern.find_reflection(0) {
-                (Some(h), None) => h as u128 * 100,
-                (None, Some(v)) => v as u128,
+                (Some(h), None) => h as u32 * 100,
+                (None, Some(v)) => v as u32,
                 _ => 0,
             }
         });
@@ -107,10 +107,10 @@ impl super::Puzzle for Puzzle {
 
     fn run_part_two(&self) {
         let patterns = Pattern::parse_all_puzzles(&self.0);
-        let res = patterns.iter().fold(0u128, |acc, pattern| {
+        let res = patterns.iter().fold(0u32, |acc, pattern| {
             acc + match pattern.find_reflection(1) {
-                (Some(h), None) => h as u128 * 100,
-                (None, Some(v)) => v as u128,
+                (Some(h), None) => h as u32 * 100,
+                (None, Some(v)) => v as u32,
                 _ => 0,
             }
         });
