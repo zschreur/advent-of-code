@@ -44,6 +44,17 @@ impl Platform {
         Self { rocks, size }
     }
 
+    fn key(&self) -> String {
+        self.rocks
+            .iter()
+            .map(|r| match r {
+                Some(Rock::Round) => 'O',
+                Some(Rock::Cube) => '#',
+                None => '.',
+            })
+            .collect::<String>()
+    }
+
     fn from_input(input: &str) -> Self {
         let size = input.lines().count();
         let rocks = input
@@ -165,20 +176,27 @@ impl super::Puzzle for Puzzle {
     }
 
     fn run_part_two(&self) {
-        let mut cache: std::collections::HashMap<_, usize> = std::collections::HashMap::new();
+        let mut cache: std::collections::HashMap<String, (_, usize)> =
+            std::collections::HashMap::new();
         let mut platform = Platform::from_input(&self.0);
-        cache.insert(platform.rocks.clone(), 0);
+        cache.insert(platform.key(), (platform.rocks.clone(), 0));
         let mut res: Option<usize> = None;
         loop {
             platform.cycle();
             let cycle_number = cache.len();
 
-            if let Some(m) = cache.get(&platform.rocks) {
-                let k = cycle_number - m;
-                let goal = ((1_000_000_000 - m) % k) + m;
-                if let Some(v_n) = cache.iter().find(|(_, value)| *value == &goal) {
+            if let Some(m) = cache.get(&platform.key()) {
+                let k = cycle_number - m.1;
+                let goal = ((1_000_000_000 - m.1) % k) + m.1;
+                if let Some(v_n) = cache.iter().find_map(|(_, value)| {
+                    if value.1 == goal {
+                        Some(value.0.to_vec())
+                    } else {
+                        None
+                    }
+                }) {
                     let goal = Platform {
-                        rocks: v_n.0.to_vec(),
+                        rocks: v_n,
                         size: platform.size,
                     };
                     res = Some(goal.calculate_load());
@@ -186,7 +204,7 @@ impl super::Puzzle for Puzzle {
 
                 break;
             } else {
-                cache.insert(platform.rocks.clone(), cycle_number);
+                cache.insert(platform.key(), (platform.rocks.clone(), cycle_number));
             }
 
             if cycle_number == 1_000_000_000 {
