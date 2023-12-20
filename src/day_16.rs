@@ -106,6 +106,7 @@ impl Tile {
     }
 }
 
+#[derive(Clone)]
 struct Grid {
     tiles: Vec<Tile>,
     size: usize,
@@ -262,7 +263,37 @@ impl super::Puzzle for Puzzle {
     }
 
     fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
-        Err("Not implemented".into())
+        let grid = Grid::from_input(&self.0).map_err(|_| "Invalid input")?;
+        let res = (0..grid.size)
+            .filter_map(|i| {
+                let b1 = (Position { x: i, y: 0 }, Direction::Down);
+                let b2 = (
+                    Position {
+                        x: i,
+                        y: grid.size - 1,
+                    },
+                    Direction::Up,
+                );
+                let b3 = (Position { x: 0, y: i }, Direction::Right);
+                let b4 = (
+                    Position {
+                        x: grid.size - 1,
+                        y: i,
+                    },
+                    Direction::Left,
+                );
+                [b1, b2, b3, b4]
+                    .iter()
+                    .filter_map(|b| {
+                        let mut grid = grid.clone();
+                        grid.add_beam(b.0, b.1);
+                        Some(grid.run_simulation())
+                    })
+                    .max()
+            })
+            .max()
+            .ok_or("No solution")?;
+        Ok(super::AOCResult::ULong(res))
     }
 }
 
