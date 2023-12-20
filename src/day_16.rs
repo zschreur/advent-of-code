@@ -1,31 +1,4 @@
-/*
- * The contraption appears to be a flat,
- * two-dimensional square grid containing
- * empty space (.), mirrors (/ and \), and splitters (| and -)
- *
- * The beam enters in the top-left corner from the left and heading to the right.
- * Then, its behavior depends on what it encounters as it moves:
- * If the beam encounters empty space (.), it continues in the same direction.
- * If the beam encounters a mirror (/ or \), the beam is reflected 90 degrees
- *   depending on the angle of the mirror. For instance, a rightward-moving beam
- *   that encounters a / mirror would continue upward in the mirror's column,
- *   while a rightward-moving beam that encounters a \ mirror would continue
- *   downward from the mirror's column.
- * If the beam encounters the pointy end of a splitter (| or -),
- *   the beam passes through the splitter as if the splitter were empty space.
- *   For instance, a rightward-moving beam that encounters a - splitter would continue in the same direction.
- * If the beam encounters the flat side of a splitter (| or -),
- *   the beam is split into two beams going in each of the two
- *   directions the splitter's pointy ends are pointing.
- *   For instance, a rightward-moving beam that encounters a | splitter would
- *   split into two beams: one that continues upward from
- *   the splitter's column and one that continues downward from the splitter's column.
- *
- * Beams do not interact with other beams; a tile can have many beams passing through
- * it at the same time. A tile is energized if that tile has at least one beam pass through it, reflect in it, or split in it.
- *
- * Count the number of tiles that become energized.
- */
+use std::collections::HashSet;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Tile {
@@ -55,9 +28,88 @@ impl std::fmt::Debug for Tile {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+struct Position {
+    x: usize,
+    y: usize,
+}
+
+struct IndexOutOfBoundsError;
+impl Position {
+    fn move_direction(&self, dir: Direction) -> Result<Self, IndexOutOfBoundsError> {
+        let pos = match dir {
+            Direction::Up => Position {
+                x: self.x,
+                y: self.y.checked_sub(1).ok_or(IndexOutOfBoundsError)?,
+            },
+            Direction::Down => Position {
+                x: self.x,
+                y: self.y + 1,
+            },
+            Direction::Left => Position {
+                x: self.x.checked_sub(1).ok_or(IndexOutOfBoundsError)?,
+                y: self.y,
+            },
+            Direction::Right => Position {
+                x: self.x + 1,
+                y: self.y,
+            },
+        };
+
+        Ok(pos)
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+enum CollisionResult {
+    Continue,
+    Turn(Direction),
+    Split(Direction, Direction),
+}
+
+impl Tile {
+    fn collision(&self, dir: Direction) -> CollisionResult {
+        match self {
+            Tile::Empty => CollisionResult::Continue,
+            Tile::FMirror => match dir {
+                Direction::Up => CollisionResult::Turn(Direction::Right),
+                Direction::Down => CollisionResult::Turn(Direction::Left),
+                Direction::Left => CollisionResult::Turn(Direction::Down),
+                Direction::Right => CollisionResult::Turn(Direction::Up),
+            },
+            Tile::BMirror => match dir {
+                Direction::Up => CollisionResult::Turn(Direction::Left),
+                Direction::Down => CollisionResult::Turn(Direction::Right),
+                Direction::Left => CollisionResult::Turn(Direction::Up),
+                Direction::Right => CollisionResult::Turn(Direction::Down),
+            },
+            Tile::VSplitter => match dir {
+                Direction::Left | Direction::Right => {
+                    CollisionResult::Split(Direction::Up, Direction::Down)
+                }
+                Direction::Down | Direction::Up => CollisionResult::Continue,
+            },
+            Tile::HSplitter => match dir {
+                Direction::Up | Direction::Down => {
+                    CollisionResult::Split(Direction::Left, Direction::Right)
+                }
+                Direction::Left | Direction::Right => CollisionResult::Continue,
+            },
+        }
+    }
+}
+
 struct Grid {
     tiles: Vec<Tile>,
     size: usize,
+    beams: Vec<(Position, Direction)>,
 }
 
 impl std::fmt::Display for Grid {
@@ -78,28 +130,114 @@ impl std::fmt::Debug for Grid {
 }
 
 impl Grid {
-    fn new(input: &str) -> Self {
+    fn new(tiles: Vec<Tile>, size: usize) -> Self {
+        Self {
+            tiles,
+            size,
+            beams: vec![],
+        }
+    }
+
+    fn from_input(input: &str) -> Result<Self, ()> {
         let grid = input
             .lines()
             .flat_map(|line| line.chars())
             .map(|c| match c {
-                '.' => Tile::Empty,
-                '/' => Tile::FMirror,
-                '\\' => Tile::BMirror,
-                '|' => Tile::VSplitter,
-                '-' => Tile::HSplitter,
-                _ => panic!("Invalid character"),
+                '.' => Ok(Tile::Empty),
+                '/' => Ok(Tile::FMirror),
+                '\\' => Ok(Tile::BMirror),
+                '|' => Ok(Tile::VSplitter),
+                '-' => Ok(Tile::HSplitter),
+                _ => Err(()),
             })
-            .collect::<Vec<_>>();
+            .collect::<Result<Vec<_>, _>>()?;
+
         let size = input.lines().count();
-        Self { tiles: grid, size }
+        Ok(Grid::new(grid, size))
     }
 
-    fn _get(&self, x: usize, y: usize) -> Option<Tile> {
-        if x >= self.size || y >= self.size {
+    fn get(&self, position: Position) -> Option<Tile> {
+        if position.x >= self.size || position.y >= self.size {
             return None;
         }
-        Some(self.tiles[y * self.size + x])
+        Some(self.tiles[position.y * self.size + position.x])
+    }
+
+    fn add_beam(&mut self, position: Position, direction: Direction) {
+        self.beams.push((position, direction));
+    }
+
+    fn tick(&mut self) {
+        let mut new_beams = vec![];
+        self.beams = self
+            .beams
+            .iter()
+            .filter_map(|(pos, dir)| {
+                let tile = self.get(*pos).unwrap();
+                match tile.collision(*dir) {
+                    CollisionResult::Continue => match pos.move_direction(*dir).ok()? {
+                        Position { x, y } if x < self.size && y < self.size => {
+                            Some((Position { x, y }, *dir))
+                        }
+                        _ => None,
+                    },
+                    CollisionResult::Turn(new_dir) => match pos.move_direction(new_dir).ok()? {
+                        Position { x, y } if x < self.size && y < self.size => {
+                            Some((Position { x, y }, new_dir))
+                        }
+                        _ => None,
+                    },
+                    CollisionResult::Split(dir1, dir2) => {
+                        let new_beam = match pos.move_direction(dir1) {
+                            Ok(Position { x, y }) if x < self.size && y < self.size => {
+                                Some((Position { x, y }, dir1))
+                            }
+                            _ => None,
+                        };
+
+                        match new_beam {
+                            Some(b) => new_beams.push(b),
+                            _ => (),
+                        };
+
+                        match pos.move_direction(dir2).ok()? {
+                            Position { x, y } if x < self.size && y < self.size => {
+                                Some((Position { x, y }, dir2))
+                            }
+                            _ => None,
+                        }
+                    }
+                }
+            })
+            .collect();
+
+        self.beams.extend(new_beams);
+    }
+
+    fn run_simulation(&mut self) -> u128 {
+        let mut seen = self.beams.iter().map(|b| *b).collect::<HashSet<_>>();
+        loop {
+            if self.beams.is_empty() {
+                break;
+            }
+
+            self.beams.iter().for_each(|b| {
+                seen.insert(*b);
+            });
+
+            self.tick();
+            self.beams = self
+                .beams
+                .iter()
+                .filter(|b| !seen.contains(b))
+                .map(|b| *b)
+                .collect();
+        }
+
+        seen.iter()
+            .map(|(pos, _)| pos)
+            .collect::<HashSet<_>>()
+            .len() as u128
     }
 }
 
@@ -116,11 +254,16 @@ impl Puzzle {
 }
 
 impl super::Puzzle for Puzzle {
-    fn run_part_one(&self) {
-        let _grid = Grid::new(&self.0);
+    fn run_part_one(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
+        let mut grid = Grid::from_input(&self.0).map_err(|_| "Invalid input")?;
+        grid.add_beam(Position { x: 0, y: 0 }, Direction::Right);
+
+        Ok(super::AOCResult::ULong(grid.run_simulation()))
     }
 
-    fn run_part_two(&self) {}
+    fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
+        Err("Not implemented".into())
+    }
 }
 
 #[cfg(test)]
@@ -140,8 +283,22 @@ mod tests {
 
     #[test]
     fn test_part_one_sample() {
-        let grid = Grid::new(SAMPLE);
-        println!("{:?}", &grid);
-        assert_eq!(grid.size, 10);
+        let mut g = Grid::from_input(SAMPLE).unwrap();
+        g.add_beam(Position { x: 0, y: 0 }, Direction::Right);
+        assert_eq!(g.beams.len(), 1);
+        assert_eq!(g.beams[0].0, Position { x: 0, y: 0 });
+        assert_eq!(g.beams[0].1, Direction::Right);
+        g.tick();
+        assert_eq!(g.beams.len(), 1);
+        assert_eq!(g.beams[0].0, Position { x: 1, y: 0 });
+        assert_eq!(g.beams[0].1, Direction::Right);
+        g.tick();
+        assert_eq!(g.beams.len(), 1);
+        assert_eq!(g.beams[0].0, Position { x: 1, y: 1 });
+        assert_eq!(g.beams[0].1, Direction::Down);
+
+        let mut g = Grid::from_input(SAMPLE).unwrap();
+        g.add_beam(Position { x: 0, y: 0 }, Direction::Right);
+        assert_eq!(g.run_simulation(), 46);
     }
 }
