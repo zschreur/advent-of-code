@@ -28,7 +28,7 @@ fn ways_to_win(time: u128, record: u128) -> u128 {
 #[derive(Debug)]
 struct ParsingError;
 impl super::Puzzle for Puzzle {
-    fn run_part_one(&self) {
+    fn run_part_one(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let parser = |input: &str| -> Result<Vec<(u128, u128)>, ParsingError> {
             let mut lines = input.lines();
             let times = lines
@@ -62,10 +62,10 @@ impl super::Puzzle for Puzzle {
             .reduce(|acc, x| acc * x)
             .unwrap();
 
-        println!("Part 1: {}", res);
+        Ok(super::AOCResult::ULong(res as u128))
     }
 
-    fn run_part_two(&self) {
+    fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let parser = |input: &str| -> Result<(u128, u128), ParsingError> {
             let mut lines = input.lines();
             let time = lines
@@ -93,7 +93,7 @@ impl super::Puzzle for Puzzle {
         let game = self.parse_input(parser).unwrap();
         let res = ways_to_win(game.0, game.1);
 
-        println!("Part 2: {}", res);
+        Ok(super::AOCResult::ULong(res as u128))
     }
 }
 

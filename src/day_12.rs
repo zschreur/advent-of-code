@@ -157,7 +157,7 @@ impl Puzzle {
 }
 
 impl super::Puzzle for Puzzle {
-    fn run_part_one(&self) {
+    fn run_part_one(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let mut cache = HashMap::new();
         let res = self
             .0
@@ -168,10 +168,10 @@ impl super::Puzzle for Puzzle {
             })
             .sum::<u128>();
 
-        println!("Part 1: {}", res);
+        Ok(super::AOCResult::ULong(res))
     }
 
-    fn run_part_two(&self) {
+    fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let mut cache = HashMap::new();
         let res = self
             .0
@@ -188,7 +188,7 @@ impl super::Puzzle for Puzzle {
             })
             .sum::<u128>();
 
-        println!("Part 2: {}", res);
+        Ok(super::AOCResult::ULong(res))
     }
 }
 

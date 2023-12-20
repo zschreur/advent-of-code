@@ -198,7 +198,7 @@ impl Puzzle {
 }
 
 impl super::Puzzle for Puzzle {
-    fn run_part_one(&self) {
+    fn run_part_one(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let res = {
             let mut game = self.get_game::<BasicHand>();
             game.0.sort();
@@ -207,9 +207,9 @@ impl super::Puzzle for Puzzle {
             })
         };
 
-        println!("Part 1: {}", res);
+        Ok(super::AOCResult::ULong(res as u128))
     }
-    fn run_part_two(&self) {
+    fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let res = {
             let mut game = self.get_game::<JokerHand>();
             game.0.sort();
@@ -218,7 +218,7 @@ impl super::Puzzle for Puzzle {
             })
         };
 
-        println!("Part 2: {}", res);
+        Ok(super::AOCResult::ULong(res as u128))
     }
 }
 

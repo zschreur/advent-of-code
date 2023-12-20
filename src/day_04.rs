@@ -79,15 +79,16 @@ impl Puzzle {
 }
 
 impl super::Puzzle for Puzzle {
-    fn run_part_one(&self) {
-        let res = self.calculate_points();
+    fn run_part_one(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
+        let result = self.calculate_points();
 
-        println!("Part 1: {}", res);
+        Ok(super::AOCResult::ULong(result as u128))
     }
-    fn run_part_two(&self) {
-        let res = self.total_scratch_cards();
 
-        println!("Part 2: {}", res);
+    fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
+        let result = self.total_scratch_cards();
+
+        Ok(super::AOCResult::ULong(result as u128))
     }
 }
 

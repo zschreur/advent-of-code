@@ -130,13 +130,13 @@ fn lcm(a: u128, nums: &[u128]) -> u128 {
 }
 
 impl super::Puzzle for Puzzle {
-    fn run_part_one(&self) {
+    fn run_part_one(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let (directions, map) = parse_map(&self.0).expect("Issue parsing input");
         let res = run_part_one(directions, map).expect("Issue running part one");
-        println!("Part 1: {}", res);
+        Ok(super::AOCResult::ULong(res))
     }
 
-    fn run_part_two(&self) {
+    fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let (directions, map) = parse_map(&self.0).expect("Issue parsing input");
         let starting_nodes = map
             .keys()
@@ -154,7 +154,7 @@ impl super::Puzzle for Puzzle {
         let a = counts.first().unwrap();
         let b = counts.split_at(1).1;
         let res = lcm(*a, &b);
-        println!("Part 2: {}", res);
+        Ok(super::AOCResult::ULong(res))
     }
 }
 

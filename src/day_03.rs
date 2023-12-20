@@ -124,7 +124,7 @@ fn parse_board(puzzle_input: &str) -> EngineSchematic {
 }
 
 impl super::Puzzle for Puzzle {
-    fn run_part_one(&self) {
+    fn run_part_one(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let engine_schematic = parse_board(&self.puzzle_input);
 
         let res = engine_schematic
@@ -138,10 +138,10 @@ impl super::Puzzle for Puzzle {
             })
             .fold(0, |acc, s| acc + s.value);
 
-        println!("Part 1: {}", res);
+        Ok(super::AOCResult::ULong(res as u128))
     }
 
-    fn run_part_two(&self) {
+    fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let engine_schematic = parse_board(&self.puzzle_input);
 
         let res = engine_schematic
@@ -168,7 +168,7 @@ impl super::Puzzle for Puzzle {
             })
             .fold(0, |acc, v| acc + v);
 
-        println!("Part 1: {}", res);
+        Ok(super::AOCResult::ULong(res as u128))
     }
 }
 

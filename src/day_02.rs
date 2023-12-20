@@ -99,7 +99,7 @@ impl Puzzle {
 }
 
 impl super::Puzzle for Puzzle {
-    fn run_part_one(&self) {
+    fn run_part_one(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let result = self
             .0
             .lines()
@@ -117,10 +117,10 @@ impl super::Puzzle for Puzzle {
             .map(|game| game.id)
             .sum::<usize>();
 
-        println!("Part 1: {}", result);
+        Ok(super::AOCResult::ULong(result as u128))
     }
 
-    fn run_part_two(&self) {
+    fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let result = self
             .0
             .lines()
@@ -129,7 +129,7 @@ impl super::Puzzle for Puzzle {
             .map(|set| power_of_set(&set))
             .sum::<usize>();
 
-        println!("Part 2: {}", result);
+        Ok(super::AOCResult::ULong(result as u128))
     }
 }
 

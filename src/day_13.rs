@@ -92,7 +92,7 @@ impl Puzzle {
 }
 
 impl super::Puzzle for Puzzle {
-    fn run_part_one(&self) {
+    fn run_part_one(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let patterns = Pattern::parse_all_puzzles(&self.0);
         let res = patterns.iter().fold(0u32, |acc, pattern| {
             acc + match pattern.find_reflection(0) {
@@ -102,10 +102,10 @@ impl super::Puzzle for Puzzle {
             }
         });
 
-        println!("Part 1: {}", res);
+        Ok(super::AOCResult::ULong(res as u128))
     }
 
-    fn run_part_two(&self) {
+    fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let patterns = Pattern::parse_all_puzzles(&self.0);
         let res = patterns.iter().fold(0u32, |acc, pattern| {
             acc + match pattern.find_reflection(1) {
@@ -115,7 +115,7 @@ impl super::Puzzle for Puzzle {
             }
         });
 
-        println!("Part 2: {}", res);
+        Ok(super::AOCResult::ULong(res as u128))
     }
 }
 

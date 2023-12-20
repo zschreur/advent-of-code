@@ -214,7 +214,7 @@ impl Puzzle {
 }
 
 impl super::Puzzle for Puzzle {
-    fn run_part_one(&self) {
+    fn run_part_one(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let almanac = &self.almanac;
         let seeds = &self.seeds;
         let all_seed_info = seeds
@@ -222,9 +222,9 @@ impl super::Puzzle for Puzzle {
             .map(|s| almanac.seed_info(*s)[6])
             .collect::<Vec<usize>>();
         let min_location = *all_seed_info.iter().min().unwrap();
-        println!("Part 1: {}", min_location);
+        Ok(super::AOCResult::ULong(min_location as u128))
     }
-    fn run_part_two(&self) {
+    fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let min = self
             .seeds
             .windows(2)
@@ -242,7 +242,12 @@ impl super::Puzzle for Puzzle {
                 }
             })
             .min();
-        println!("Part 2: {}", min.unwrap());
+
+        min.map(|r| super::AOCResult::ULong(r as u128))
+            .ok_or(Box::new(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "No min found",
+            )))
     }
 }
 

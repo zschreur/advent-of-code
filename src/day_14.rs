@@ -167,15 +167,15 @@ impl Puzzle {
 }
 
 impl super::Puzzle for Puzzle {
-    fn run_part_one(&self) {
+    fn run_part_one(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let mut platform = Platform::from_input(&self.0);
         platform.tilt(Direction::North);
 
         let load = platform.calculate_load();
-        println!("Part 1: {}", load);
+        Ok(super::AOCResult::ULong(load as u128))
     }
 
-    fn run_part_two(&self) {
+    fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let mut cache: std::collections::HashMap<String, (_, usize)> =
             std::collections::HashMap::new();
         let mut platform = Platform::from_input(&self.0);
@@ -211,7 +211,8 @@ impl super::Puzzle for Puzzle {
                 break;
             }
         }
-        println!("Part 2: {}", res.expect("No result found"));
+        res.map(|v| super::AOCResult::ULong(v as u128))
+            .ok_or("Error".into())
     }
 }
 

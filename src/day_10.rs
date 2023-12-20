@@ -195,7 +195,10 @@ impl<'a> PipeNavigator<'a> {
                 },
                 Direction::East,
             ),
-            _ => panic!("Unable to find next position: {:?}", (&self.heading, &self.position, &self.current_pipe)),
+            _ => panic!(
+                "Unable to find next position: {:?}",
+                (&self.heading, &self.position, &self.current_pipe)
+            ),
         };
 
         self.current_pipe = match self
@@ -290,23 +293,23 @@ impl Puzzle {
 }
 
 impl super::Puzzle for Puzzle {
-    fn run_part_one(&self) {
+    fn run_part_one(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let diagram = parse_diagram(&self.0);
         let loop_points = find_loop_points(&diagram);
 
         let length = loop_points.len();
 
-        println!("Part 1: {}", length / 2);
+        Ok(super::AOCResult::ULong(length as u128 / 2))
     }
 
-    fn run_part_two(&self) {
+    fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let diagram = parse_diagram(&self.0);
         let loop_points = find_loop_points(&diagram);
         let loop_scanner = LoopScanner::new(&loop_points, &diagram.map);
         let enclosed_points = loop_scanner.find_enclosed_points();
         let res = enclosed_points.len();
 
-        println!("Part 2: {}", res);
+        Ok(super::AOCResult::ULong(res as u128))
     }
 }
 

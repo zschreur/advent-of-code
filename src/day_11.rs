@@ -109,18 +109,18 @@ fn galaxy_distances(image: &Image, expansion_size: u128) -> u128 {
 }
 
 impl super::Puzzle for Puzzle {
-    fn run_part_one(&self) {
+    fn run_part_one(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let image = parse_image(&self.0).expect("Issue parsing image");
         let total_distance = galaxy_distances(&image, 2);
 
-        println!("Part 1: {}", total_distance);
+        Ok(super::AOCResult::ULong(total_distance))
     }
 
-    fn run_part_two(&self) {
+    fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let image = parse_image(&self.0).expect("Issue parsing image");
         let total_distance = galaxy_distances(&image, 1_000_000);
 
-        println!("Part 2: {}", total_distance);
+        Ok(super::AOCResult::ULong(total_distance))
     }
 }
 
