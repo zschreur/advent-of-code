@@ -1,3 +1,53 @@
+pub mod grid {
+    #[derive(Debug)]
+    pub struct Grid<T> {
+        size: usize,
+        blocks: Vec<Vec<T>>,
+    }
+
+    impl<T> Grid<T> {
+        pub fn new(size: usize, blocks: Vec<Vec<T>>) -> Self {
+            Self { size, blocks }
+        }
+
+        pub fn size(&self) -> usize {
+            self.size
+        }
+
+        pub fn get(&self, point: Point) -> Option<&T> {
+            self.blocks.get(point.1).and_then(|row| row.get(point.0))
+        }
+    }
+
+    #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, std::cmp::PartialOrd, std::cmp::Ord)]
+    pub enum Direction {
+        Up,
+        Down,
+        Left,
+        Right,
+    }
+
+    #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, std::cmp::PartialOrd, std::cmp::Ord)]
+    pub struct Point(pub usize, pub usize);
+
+    impl Point {
+        pub fn new(x: usize, y: usize) -> Self {
+            Self(x, y)
+        }
+
+        pub fn move_direction(&self, dir: Direction) -> Option<Self> {
+            let pos = match dir {
+                Direction::Up => Point(self.0, self.1.checked_sub(1)?),
+                Direction::Down => Point(self.0, self.1 + 1),
+                Direction::Left => Point(self.0.checked_sub(1)?, self.1),
+                Direction::Right => Point(self.0 + 1, self.1),
+            };
+
+            Some(pos)
+        }
+    }
+}
+
 pub mod setup {
     pub struct Args {
         pub day: usize,
