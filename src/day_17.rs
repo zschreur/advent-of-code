@@ -115,21 +115,6 @@ fn djikstra(grid: &Grid<usize>) -> Option<usize> {
             .iter()
             .filter(|(node, _)| !visited_nodes.contains(node))
             .for_each(|(node, value)| {
-                match unvisited_nodes.range_mut(value + 1..).find_map(|(c, v)| {
-                    if v.contains(node) {
-                        Some(*c)
-                    } else {
-                        None
-                    }
-                }) {
-                    Some(v) => {
-                        unvisited_nodes.get_mut(&v).unwrap().remove(node);
-                        if unvisited_nodes.get(&v).unwrap().is_empty() {
-                            unvisited_nodes.remove(&v);
-                        }
-                    }
-                    None => (),
-                }
                 unvisited_nodes
                     .entry(*value)
                     .or_insert_with(BTreeSet::new)
