@@ -1,5 +1,5 @@
 use crate::grid::*;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, HashSet};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 struct Node {
@@ -30,14 +30,14 @@ impl Node {
 
 fn djikstra(grid: &Grid<usize>) -> Option<usize> {
     let mut visited_nodes = vec![vec![[false; 12]; grid.size()]; grid.size()];
-    let mut unvisited_nodes = BTreeMap::<usize, BTreeSet<Node>>::new();
+    let mut unvisited_nodes = BTreeMap::<usize, HashSet<Node>>::new();
     unvisited_nodes.insert(
         *grid.get(Point(0, 1)).unwrap(),
-        BTreeSet::from_iter(vec![Node::new(Point(0, 1), Direction::Down, 1)]),
+        HashSet::from_iter(vec![Node::new(Point(0, 1), Direction::Down, 1)]),
     );
     unvisited_nodes.insert(
         *grid.get(Point(1, 0)).unwrap(),
-        BTreeSet::from_iter(vec![Node::new(Point(1, 0), Direction::Down, 1)]),
+        HashSet::from_iter(vec![Node::new(Point(1, 0), Direction::Right, 1)]),
     );
 
     loop {
@@ -49,8 +49,11 @@ fn djikstra(grid: &Grid<usize>) -> Option<usize> {
                 }
             };
             let cost = *min_value.key();
-            let node = match min_value.get_mut().pop_first() {
-                Some(node) => node,
+            let node = match min_value.get_mut().iter().next() {
+                Some(&node) => {
+                    min_value.get_mut().remove(&node);
+                    node
+                }
                 _ => {
                     break;
                 }
@@ -112,7 +115,7 @@ fn djikstra(grid: &Grid<usize>) -> Option<usize> {
         .for_each(|(node, value)| {
             unvisited_nodes
                 .entry(value)
-                .or_insert_with(BTreeSet::new)
+                .or_insert_with(HashSet::new)
                 .insert(node);
         });
 
