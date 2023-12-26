@@ -1,5 +1,5 @@
 use crate::grid::*;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 /*
   Djikstra's algorithm
@@ -14,8 +14,8 @@ use std::collections::BTreeMap;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 struct Node {
     point: Point,
-    direction: Direction,
     count: usize,
+    direction: Direction,
 }
 
 impl Node {
@@ -29,55 +29,41 @@ impl Node {
 }
 
 fn djikstra(grid: &Grid<usize>) -> Option<usize> {
-    let mut unvisited_nodes = BTreeMap::<Node, (usize, Node)>::new();
-    let mut visited_nodes = BTreeMap::<Node, (usize, Node)>::new();
+    let mut visited_nodes = BTreeSet::<Node>::new();
+    let mut unvisited_nodes = BTreeMap::<usize, BTreeSet<Node>>::new();
     unvisited_nodes.insert(
-        Node::new(Point::new(1, 0), Direction::Right, 1),
-        (
-            *grid.get(Point(1, 0)).unwrap(),
-            Node::new(Point(0, 0), Direction::Right, 1),
-        ),
+        *grid.get(Point(0, 1)).unwrap(),
+        BTreeSet::from_iter(vec![Node::new(Point(0, 1), Direction::Down, 1)]),
     );
-
     unvisited_nodes.insert(
-        Node::new(Point::new(0, 1), Direction::Down, 1),
-        (
-            *grid.get(Point(0, 1)).unwrap(),
-            Node::new(Point(0, 0), Direction::Down, 1),
-        ),
+        *grid.get(Point(1, 0)).unwrap(),
+        BTreeSet::from_iter(vec![Node::new(Point(1, 0), Direction::Down, 1)]),
     );
 
     loop {
-        let min = {
-            if let Some((&min, _)) = unvisited_nodes.iter().min_by(|a, b| match a.1.cmp(&b.1) {
-                std::cmp::Ordering::Equal => b.0.cmp(&a.0),
-                ordering => ordering,
-            }) {
-                unvisited_nodes.remove_entry(&min)
-            } else {
-                None
-            }
-        };
-
-        if min.is_none() {
-            break;
-        }
-        let (current_node, current_value) = min.unwrap();
-
-        if current_node.point.0 == grid.size() - 1 && current_node.point.1 == grid.size() - 1 {
-            let mut prev = current_value.1;
-            loop {
-                if prev.point.0 == 0 && prev.point.1 == 0 {
+        let (current_node, current_cost) = {
+            let mut min_value = match unvisited_nodes.first_entry() {
+                Some(min_value) => min_value,
+                None => {
                     break;
                 }
-                match visited_nodes.get(&prev) {
-                    Some((_, p)) => {
-                        prev = *p;
-                    }
-                    _ => break,
+            };
+            let cost = *min_value.key();
+            let node = match min_value.get_mut().pop_first() {
+                Some(node) => node,
+                _ => {
+                    break;
                 }
+            };
+
+            if min_value.get().is_empty() {
+                min_value.remove_entry();
             }
-            return Some(current_value.0);
+
+            (node, cost)
+        };
+        if current_node.point.0 == grid.size() - 1 && current_node.point.1 == grid.size() - 1 {
+            return Some(current_cost);
         }
 
         // Vec of nodes and the calculated cost to get there
@@ -118,7 +104,7 @@ fn djikstra(grid: &Grid<usize>) -> Option<usize> {
                                 direction,
                                 count,
                             },
-                            v + current_value.0,
+                            v + current_cost,
                         )
                     })
                 })
@@ -127,20 +113,30 @@ fn djikstra(grid: &Grid<usize>) -> Option<usize> {
 
         neighbors
             .iter()
-            .filter(|(node, _)| !visited_nodes.contains_key(node))
+            .filter(|(node, _)| !visited_nodes.contains(node))
             .for_each(|(node, value)| {
-                unvisited_nodes
-                    .entry(*node)
-                    .and_modify(|(v, prev)| {
-                        if value < v {
-                            *v = *value;
-                            *prev = current_node;
+                match unvisited_nodes.range_mut(value + 1..).find_map(|(c, v)| {
+                    if v.contains(node) {
+                        Some(*c)
+                    } else {
+                        None
+                    }
+                }) {
+                    Some(v) => {
+                        unvisited_nodes.get_mut(&v).unwrap().remove(node);
+                        if unvisited_nodes.get(&v).unwrap().is_empty() {
+                            unvisited_nodes.remove(&v);
                         }
-                    })
-                    .or_insert((*value, current_node));
+                    }
+                    None => (),
+                }
+                unvisited_nodes
+                    .entry(*value)
+                    .or_insert_with(BTreeSet::new)
+                    .insert(*node);
             });
 
-        visited_nodes.insert(current_node, current_value);
+        visited_nodes.insert(current_node);
     }
 
     None
