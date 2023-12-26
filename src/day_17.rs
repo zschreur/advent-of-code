@@ -1,16 +1,6 @@
 use crate::grid::*;
 use std::collections::{BTreeMap, BTreeSet};
 
-/*
-  Djikstra's algorithm
-*/
-
-/*
-   1. Create a graph of the maze
-   2. Find the shortest path from the start to the end
-   3. Return the length of the path
-*/
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 struct Node {
     point: Point,
@@ -26,10 +16,20 @@ impl Node {
             count,
         }
     }
+
+    fn as_index(&self) -> usize {
+        let direction = match self.direction {
+            Direction::Up => 0,
+            Direction::Down => 1,
+            Direction::Left => 2,
+            Direction::Right => 3,
+        };
+        direction * 3 + self.count - 1
+    }
 }
 
 fn djikstra(grid: &Grid<usize>) -> Option<usize> {
-    let mut visited_nodes = BTreeSet::<Node>::new();
+    let mut visited_nodes = vec![vec![[false; 12]; grid.size()]; grid.size()];
     let mut unvisited_nodes = BTreeMap::<usize, BTreeSet<Node>>::new();
     unvisited_nodes.insert(
         *grid.get(Point(0, 1)).unwrap(),
@@ -66,8 +66,7 @@ fn djikstra(grid: &Grid<usize>) -> Option<usize> {
             return Some(current_cost);
         }
 
-        // Vec of nodes and the calculated cost to get there
-        let neighbors = [
+        [
             Direction::Up,
             Direction::Down,
             Direction::Left,
@@ -109,19 +108,15 @@ fn djikstra(grid: &Grid<usize>) -> Option<usize> {
                     })
                 })
         })
-        .collect::<Vec<_>>();
+        .filter(|(node, _)| visited_nodes[node.point.0][node.point.1][node.as_index()] == false)
+        .for_each(|(node, value)| {
+            unvisited_nodes
+                .entry(value)
+                .or_insert_with(BTreeSet::new)
+                .insert(node);
+        });
 
-        neighbors
-            .iter()
-            .filter(|(node, _)| !visited_nodes.contains(node))
-            .for_each(|(node, value)| {
-                unvisited_nodes
-                    .entry(*value)
-                    .or_insert_with(BTreeSet::new)
-                    .insert(*node);
-            });
-
-        visited_nodes.insert(current_node);
+        visited_nodes[current_node.point.0][current_node.point.1][current_node.as_index()] = true;
     }
 
     None
