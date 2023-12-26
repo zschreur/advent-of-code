@@ -24,12 +24,12 @@ impl Node {
             Direction::Left => 2,
             Direction::Right => 3,
         };
-        direction * 3 + self.count - 1
+        direction * 10 + self.count - 1
     }
 }
 
-fn djikstra(grid: &Grid<usize>) -> Option<usize> {
-    let mut visited_nodes = vec![vec![[false; 12]; grid.size()]; grid.size()];
+fn djikstra(grid: &Grid<usize>, ultra: bool) -> Option<usize> {
+    let mut visited_nodes = vec![vec![[false; 40]; grid.size()]; grid.size()];
     let mut unvisited_nodes = BTreeMap::<usize, BTreeSet<Node>>::new();
     unvisited_nodes.insert(
         *grid.get(Point(0, 1)).unwrap(),
@@ -82,11 +82,19 @@ fn djikstra(grid: &Grid<usize>) -> Option<usize> {
         })
         .filter_map(|direction| {
             if direction == &current_node.direction {
-                if current_node.count >= 3 {
+                if ultra {
+                    if current_node.count < 10 {
+                        Some((*direction, current_node.count + 1))
+                    } else {
+                        None
+                    }
+                } else if current_node.count >= 3 {
                     None
                 } else {
                     Some((*direction, current_node.count + 1))
                 }
+            } else if ultra && current_node.count < 4 {
+                None
             } else {
                 Some((*direction, 1))
             }
@@ -147,7 +155,7 @@ impl super::Puzzle for Puzzle {
             .collect::<Vec<_>>();
 
         let grid = Grid::<_>::new(blocks.len(), blocks);
-        let res = djikstra(&grid)
+        let res = djikstra(&grid, false)
             .ok_or("No path found")
             .map(|v| super::AOCResult::ULong(v as u128))?;
 
@@ -155,7 +163,22 @@ impl super::Puzzle for Puzzle {
     }
 
     fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
-        Err("Not implemented".into())
+        let blocks = self
+            .0
+            .lines()
+            .map(|line| {
+                line.chars()
+                    .map(|c| c.to_digit(10).expect("Not a digit") as usize)
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+
+        let grid = Grid::<_>::new(blocks.len(), blocks);
+        let res = djikstra(&grid, true)
+            .ok_or("No path found")
+            .map(|v| super::AOCResult::ULong(v as u128))?;
+
+        Ok(res)
     }
 }
 
@@ -189,7 +212,8 @@ mod tests {
             .collect::<Vec<_>>();
 
         let grid = Grid::<_>::new(SAMPLE_INPUT.lines().count(), blocks);
-        assert!(djikstra(&grid).is_some());
-        assert_eq!(djikstra(&grid).unwrap(), 102);
+        let res = djikstra(&grid, false);
+        assert!(res.is_some());
+        assert_eq!(res.unwrap(), 102);
     }
 }
