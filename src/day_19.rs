@@ -15,6 +15,12 @@ enum Then {
     Rejected,
 }
 
+enum RangeApplyResult {
+    None,
+    All(Then),
+    Split(([(u16, u16); 4], Then), [(u16, u16); 4]),
+}
+
 #[derive(Debug)]
 enum Rule {
     If(Category, std::cmp::Ordering, u16, Then),
@@ -30,6 +36,77 @@ impl Rule {
                     Some(*t)
                 } else {
                     None
+                }
+            }
+        }
+    }
+
+    fn apply_rule_to_parts(&self, parts: &[(u16, u16); 4]) -> RangeApplyResult {
+        use std::cmp::Ordering::*;
+        match self {
+            Rule::Else(t) => RangeApplyResult::All(*t),
+            Rule::If(c, o, v, t) => {
+                let r = parts[*c as usize];
+                match (r.0.cmp(&v), r.1.cmp(&v)) {
+                    (Greater, _) | (_, Less) | (Equal, Equal) => RangeApplyResult::None,
+                    (_, Equal) if o == &Greater => RangeApplyResult::None,
+                    (Equal, _) if o == &Less => RangeApplyResult::None,
+                    (_, Equal) => {
+                        let left = {
+                            let mut ranges = parts.clone();
+                            ranges[*c as usize] = (r.0, r.1 - 1);
+                            ranges
+                        };
+                        let right = {
+                            let mut ranges = parts.clone();
+                            ranges[*c as usize] = (r.1, r.1);
+                            ranges
+                        };
+
+                        RangeApplyResult::Split((left, *t), right)
+                    }
+                    (Equal, _) => {
+                        let left = {
+                            let mut ranges = parts.clone();
+                            ranges[*c as usize] = (r.0, r.0);
+                            ranges
+                        };
+                        let right = {
+                            let mut ranges = parts.clone();
+                            ranges[*c as usize] = (r.0 + 1, r.1);
+                            ranges
+                        };
+
+                        RangeApplyResult::Split((right, *t), left)
+                    }
+                    (Less, Greater) if o == &Less => {
+                        let left = {
+                            let mut ranges = parts.clone();
+                            ranges[*c as usize] = (r.0, v - 1);
+                            ranges
+                        };
+                        let right = {
+                            let mut ranges = parts.clone();
+                            ranges[*c as usize] = (*v, r.1);
+                            ranges
+                        };
+
+                        RangeApplyResult::Split((left, *t), right)
+                    }
+                    (Less, Greater) => {
+                        let left = {
+                            let mut ranges = parts.clone();
+                            ranges[*c as usize] = (r.0, *v);
+                            ranges
+                        };
+                        let right = {
+                            let mut ranges = parts.clone();
+                            ranges[*c as usize] = (v + 1, r.1);
+                            ranges
+                        };
+
+                        RangeApplyResult::Split((right, *t), left)
+                    }
                 }
             }
         }
@@ -62,7 +139,7 @@ fn parse_rules(rules: &str) -> Vec<Rule> {
                     _ => Then::Next(parse_id(then)),
                 };
 
-                let (mid, comparison) = condition
+                let (mid, ordering) = condition
                     .find("<")
                     .and_then(|mid| Some((mid, std::cmp::Ordering::Less)))
                     .or_else(|| {
@@ -86,7 +163,7 @@ fn parse_rules(rules: &str) -> Vec<Rule> {
                     _ => panic!("Bad category"),
                 };
 
-                Rule::If(category, comparison, value, then)
+                Rule::If(category, ordering, value, then)
             }
             None => Rule::Else(match rule {
                 "A" => Then::Accepted,
@@ -174,8 +251,38 @@ impl Aplenty {
             .fold(0u128, |acc, p| acc + (p[0] + p[1] + p[2] + p[3]) as u128)
     }
 
-    fn acceptable_combinations(&self) -> u128 {
-        todo!();
+    fn acceptable_combinations(&self, mut part_ranges: [(u16, u16); 4], workflow_id: u16) -> u128 {
+        let workflow = self
+            .workflows
+            .get(&workflow_id)
+            .expect("Workflow does not exist");
+
+        let mut combinations = 0u128;
+        for rule in workflow {
+            match rule.apply_rule_to_parts(&part_ranges) {
+                RangeApplyResult::None => (),
+                RangeApplyResult::All(t) => {
+                    combinations += match t {
+                        Then::Rejected => 0,
+                        Then::Accepted => part_ranges
+                            .iter()
+                            .fold(1, |c, (a, b)| c * (b - a + 1) as u128),
+                        Then::Next(next_id) => self.acceptable_combinations(part_ranges, next_id),
+                    };
+                    break;
+                }
+                RangeApplyResult::Split((r0, t), r1) => {
+                    part_ranges = r1;
+                    combinations += match t {
+                        Then::Rejected => 0,
+                        Then::Accepted => r0.iter().fold(1, |c, (a, b)| c * (b - a + 1) as u128),
+                        Then::Next(next_id) => self.acceptable_combinations(r0, next_id),
+                    };
+                }
+            };
+        }
+
+        combinations
     }
 }
 
@@ -201,7 +308,7 @@ impl super::Puzzle for Puzzle {
 
     fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let a = Aplenty::from_input(&self.0);
-        let res = a.acceptable_combinations();
+        let res = a.acceptable_combinations([(1, 4000); 4], parse_id("in"));
 
         Ok(crate::AOCResult::ULong(res as u128))
     }
@@ -239,7 +346,7 @@ hdj{m>838:A,pv}
     #[test]
     fn test_part_two() {
         let a = Aplenty::from_input(SAMPLE_INPUT);
-        let res = a.acceptable_combinations();
+        let res = a.acceptable_combinations([(1, 4000); 4], parse_id("in"));
         assert_eq!(res, 167409079868000);
     }
 }
