@@ -179,6 +179,10 @@ impl Aplenty {
             })
             .fold(0u128, |acc, p| acc + (p.0 + p.1 + p.2 + p.3) as u128)
     }
+
+    fn acceptable_combinations(&self) -> u128 {
+        todo!();
+    }
 }
 
 pub struct Puzzle(String);
@@ -202,7 +206,10 @@ impl super::Puzzle for Puzzle {
     }
 
     fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
-        unimplemented!();
+        let a = Aplenty::from_input(&self.0);
+        let res = a.acceptable_combinations();
+
+        Ok(crate::AOCResult::ULong(res as u128))
     }
 }
 
@@ -229,9 +236,16 @@ hdj{m>838:A,pv}
 {x=2127,m=1623,a=2188,s=1013}";
 
     #[test]
-    fn test() {
+    fn test_part_one() {
         let a = Aplenty::from_input(SAMPLE_INPUT);
         let res = a.filter_parts();
         assert_eq!(res, 19114);
+    }
+
+    #[test]
+    fn test_part_two() {
+        let a = Aplenty::from_input(SAMPLE_INPUT);
+        let res = a.acceptable_combinations();
+        assert_eq!(res, 167409079868000);
     }
 }
