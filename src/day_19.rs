@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 enum Category {
     X,
     M,
@@ -22,17 +22,11 @@ enum Rule {
 }
 
 impl Rule {
-    fn apply_rule(&self, p: &(u16, u16, u16, u16)) -> Option<Then> {
-        use Category::*;
+    fn apply_rule(&self, p: &[u16; 4]) -> Option<Then> {
         match self {
             Rule::Else(t) => Some(*t),
             Rule::If(c, o, v, t) => {
-                if match c {
-                    X => p.0.cmp(v) == *o,
-                    M => p.1.cmp(v) == *o,
-                    A => p.2.cmp(v) == *o,
-                    S => p.3.cmp(v) == *o,
-                } {
+                if p[*c as usize].cmp(v) == *o {
                     Some(*t)
                 } else {
                     None
@@ -44,7 +38,7 @@ impl Rule {
 
 struct Aplenty {
     workflows: BTreeMap<u16, Vec<Rule>>,
-    parts: Vec<(u16, u16, u16, u16)>,
+    parts: Vec<[u16; 4]>,
 }
 
 fn parse_id(s: &str) -> u16 {
@@ -144,7 +138,7 @@ impl Aplenty {
                     .map(|s| s.split_at(2).1.parse::<u16>().unwrap())
                     .unwrap();
 
-                (x, m, a, s)
+                [x, m, a, s]
             })
             .collect::<Vec<_>>();
 
@@ -177,7 +171,7 @@ impl Aplenty {
                     }
                 }
             })
-            .fold(0u128, |acc, p| acc + (p.0 + p.1 + p.2 + p.3) as u128)
+            .fold(0u128, |acc, p| acc + (p[0] + p[1] + p[2] + p[3]) as u128)
     }
 
     fn acceptable_combinations(&self) -> u128 {
