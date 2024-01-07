@@ -1,4 +1,32 @@
-use std::collections::BTreeMap;
+use std::cmp::Ordering;
+
+#[derive(Debug, Clone, Copy)]
+enum Order {
+    Less,
+    Greater,
+}
+
+impl std::str::FromStr for Order {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "<" => Ok(Self::Less),
+            ">" => Ok(Self::Greater),
+            _ => Err(format!("Invalid ordering {}", s)),
+        }
+    }
+}
+
+impl PartialEq<Ordering> for Order {
+    fn eq(&self, other: &Ordering) -> bool {
+        match (self, other) {
+            (Self::Less, Ordering::Less) => true,
+            (Self::Greater, Ordering::Greater) => true,
+            _ => false,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
 enum Category {
@@ -23,7 +51,7 @@ enum RangeApplyResult {
 
 #[derive(Debug)]
 enum Rule {
-    If(Category, std::cmp::Ordering, u16, Then),
+    If(Category, Order, u16, Then),
     Else(Then),
 }
 
@@ -32,7 +60,7 @@ impl Rule {
         match self {
             Rule::Else(t) => Some(*t),
             Rule::If(c, o, v, t) => {
-                if p[*c as usize].cmp(v) == *o {
+                if *o == p[*c as usize].cmp(v) {
                     Some(*t)
                 } else {
                     None
@@ -42,44 +70,18 @@ impl Rule {
     }
 
     fn apply_rule_to_parts(&self, parts: &[(u16, u16); 4]) -> RangeApplyResult {
-        use std::cmp::Ordering::*;
         match self {
             Rule::Else(t) => RangeApplyResult::All(*t),
             Rule::If(c, o, v, t) => {
                 let r = parts[*c as usize];
-                match (r.0.cmp(&v), r.1.cmp(&v)) {
-                    (Greater, _) | (_, Less) | (Equal, Equal) => RangeApplyResult::None,
-                    (_, Equal) if o == &Greater => RangeApplyResult::None,
-                    (Equal, _) if o == &Less => RangeApplyResult::None,
-                    (_, Equal) => {
-                        let left = {
-                            let mut ranges = parts.clone();
-                            ranges[*c as usize] = (r.0, r.1 - 1);
-                            ranges
-                        };
-                        let right = {
-                            let mut ranges = parts.clone();
-                            ranges[*c as usize] = (r.1, r.1);
-                            ranges
-                        };
-
-                        RangeApplyResult::Split((left, *t), right)
-                    }
-                    (Equal, _) => {
-                        let left = {
-                            let mut ranges = parts.clone();
-                            ranges[*c as usize] = (r.0, r.0);
-                            ranges
-                        };
-                        let right = {
-                            let mut ranges = parts.clone();
-                            ranges[*c as usize] = (r.0 + 1, r.1);
-                            ranges
-                        };
-
-                        RangeApplyResult::Split((right, *t), left)
-                    }
-                    (Less, Greater) if o == &Less => {
+                match (o, r.0.cmp(&v), r.1.cmp(&v)) {
+                    (_, Ordering::Greater, _)
+                    | (_, _, Ordering::Less)
+                    | (_, Ordering::Equal, Ordering::Equal) => RangeApplyResult::None,
+                    (Order::Greater, _, Ordering::Equal) => RangeApplyResult::None,
+                    (Order::Less, Ordering::Equal, _) => RangeApplyResult::None,
+                    (Order::Less, Ordering::Less, Ordering::Greater)
+                    | (Order::Less, _, Ordering::Equal) => {
                         let left = {
                             let mut ranges = parts.clone();
                             ranges[*c as usize] = (r.0, v - 1);
@@ -93,7 +95,7 @@ impl Rule {
 
                         RangeApplyResult::Split((left, *t), right)
                     }
-                    (Less, Greater) => {
+                    (_, Ordering::Less, Ordering::Greater) | (_, Ordering::Equal, _) => {
                         let left = {
                             let mut ranges = parts.clone();
                             ranges[*c as usize] = (r.0, *v);
@@ -114,7 +116,7 @@ impl Rule {
 }
 
 struct Aplenty {
-    workflows: BTreeMap<u16, Vec<Rule>>,
+    workflows: Vec<(u16, Vec<Rule>)>,
     parts: Vec<[u16; 4]>,
 }
 
@@ -141,11 +143,11 @@ fn parse_rules(rules: &str) -> Vec<Rule> {
 
                 let (mid, ordering) = condition
                     .find("<")
-                    .and_then(|mid| Some((mid, std::cmp::Ordering::Less)))
+                    .and_then(|mid| Some((mid, Order::Less)))
                     .or_else(|| {
                         condition
                             .find(">")
-                            .and_then(|mid| Some((mid, std::cmp::Ordering::Greater)))
+                            .and_then(|mid| Some((mid, Order::Greater)))
                     })
                     .expect("Unexpected ordering");
 
@@ -176,7 +178,7 @@ fn parse_rules(rules: &str) -> Vec<Rule> {
 
 impl Aplenty {
     fn from_input(input: &str) -> Self {
-        let workflows = input
+        let mut workflows = input
             .lines()
             .take_while(|line| !line.is_empty())
             .map(|s| {
@@ -186,7 +188,9 @@ impl Aplenty {
                 let rules = parse_rules(rules);
                 (id, rules)
             })
-            .collect::<BTreeMap<_, _>>();
+            .collect::<Vec<_>>();
+
+        workflows.sort_by(|(id_a, _), (id_b, _)| id_a.cmp(id_b));
 
         let parts = input
             .lines()
@@ -225,7 +229,8 @@ impl Aplenty {
     fn filter_parts(&self) -> u128 {
         let start_workflow = self
             .workflows
-            .get(&parse_id("in"))
+            .binary_search_by(|(id, _)| id.cmp(&parse_id("in")))
+            .map(|i| &self.workflows[i].1)
             .expect("No starting point");
         self.parts
             .iter()
@@ -242,7 +247,8 @@ impl Aplenty {
                         Then::Next(id) => {
                             cur = self
                                 .workflows
-                                .get(&id)
+                                .binary_search_by(|(i, _)| i.cmp(&id))
+                                .map(|i| &self.workflows[i].1)
                                 .expect("Next workflow does not exist");
                         }
                     }
@@ -254,8 +260,9 @@ impl Aplenty {
     fn acceptable_combinations(&self, mut part_ranges: [(u16, u16); 4], workflow_id: u16) -> u128 {
         let workflow = self
             .workflows
-            .get(&workflow_id)
-            .expect("Workflow does not exist");
+            .binary_search_by(|(id, _)| id.cmp(&workflow_id))
+            .map(|i| &self.workflows[i].1)
+            .expect("No starting point");
 
         let mut combinations = 0u128;
         for rule in workflow {
