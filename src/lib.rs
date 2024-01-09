@@ -68,6 +68,7 @@ pub mod setup {
 
 pub enum AOCResult {
     ULong(u128),
+    USize(usize),
     Long(i128),
 }
 
@@ -76,6 +77,7 @@ impl std::fmt::Display for AOCResult {
         match self {
             AOCResult::ULong(n) => write!(f, "{}", n),
             AOCResult::Long(n) => write!(f, "{}", n),
+            AOCResult::USize(n) => write!(f, "{}", n),
         }
     }
 }

@@ -6,8 +6,8 @@ struct Position {
 
 struct Image {
     galaxies: Vec<Position>,
-    expanded_rows: Vec<u128>,
-    expanded_columns: Vec<u128>,
+    expanded_rows: Vec<usize>,
+    expanded_columns: Vec<usize>,
 }
 
 fn parse_image(input: &str) -> Option<Image> {
@@ -69,9 +69,9 @@ impl Puzzle {
     }
 }
 
-fn galaxy_distances(image: &Image, expansion_size: u128) -> u128 {
+fn galaxy_distances(image: &Image, expansion_size: usize) -> usize {
     let galaxies = &image.galaxies;
-    let mut sum: u128 = 0;
+    let mut sum: usize = 0;
     for (i, Position { x: x0, y: min_y }) in galaxies.iter().enumerate() {
         for Position { x: x1, y: max_y } in galaxies.iter().skip(i + 1) {
             let (min_x, max_x) = if x0 <= x1 { (x0, x1) } else { (x1, x0) };
@@ -82,8 +82,8 @@ fn galaxy_distances(image: &Image, expansion_size: u128) -> u128 {
             let expanded_row_count = image.expanded_rows[*max_y] - image.expanded_rows[*min_y];
 
             sum += (expansion_size - 1) * (expanded_row_count + expanded_column_count)
-                + (max_x - min_x) as u128
-                + (max_y - min_y) as u128;
+                + (max_x - min_x)
+                + (max_y - min_y);
         }
     }
 
@@ -95,14 +95,14 @@ impl super::Puzzle for Puzzle {
         let image = parse_image(&self.0).expect("Issue parsing image");
         let total_distance = galaxy_distances(&image, 2);
 
-        Ok(super::AOCResult::ULong(total_distance))
+        Ok(super::AOCResult::USize(total_distance))
     }
 
     fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let image = parse_image(&self.0).expect("Issue parsing image");
         let total_distance = galaxy_distances(&image, 1_000_000);
 
-        Ok(super::AOCResult::ULong(total_distance))
+        Ok(super::AOCResult::USize(total_distance))
     }
 }
 
