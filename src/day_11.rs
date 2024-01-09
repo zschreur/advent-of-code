@@ -1,5 +1,3 @@
-use std::collections::BTreeSet;
-
 #[derive(PartialEq, Clone, Copy, Debug)]
 enum ImageData {
     Galaxy,
@@ -15,16 +13,16 @@ use ImageData::*;
 
 struct Image {
     image_data: Vec<Vec<ImageData>>,
-    expanded_rows: BTreeSet<u128>,
-    expanded_columns: BTreeSet<u128>,
+    expanded_rows: Vec<u128>,
+    expanded_columns: Vec<u128>,
 }
 
 fn parse_image(input: &str) -> Option<Image> {
-    let mut expanded_rows = BTreeSet::new();
-    let mut expanded_columns = BTreeSet::new();
-    let image_data = input.lines().enumerate().fold(
-        Vec::<Vec<ImageData>>::new(),
-        |mut image, (row_index, line)| {
+    let mut expanded_rows = Vec::new();
+    let mut expanded_columns = Vec::new();
+    let image_data = input
+        .lines()
+        .fold(Vec::<Vec<ImageData>>::new(), |mut image, line| {
             let row = line
                 .chars()
                 .map(|c| match c {
@@ -34,18 +32,20 @@ fn parse_image(input: &str) -> Option<Image> {
                 .collect::<Vec<ImageData>>();
 
             if !row.contains(&Galaxy) {
-                expanded_rows.insert(row_index as u128);
+                expanded_rows.iter_mut().for_each(|c| *c += 1);
             }
+            expanded_rows.push(0);
+
             image.push(row);
 
             image
-        },
-    );
+        });
 
     for x in 0..image_data.first()?.len() {
         if !image_data.iter().any(|row| row[x] == Galaxy) {
-            expanded_columns.insert(x as u128);
+            expanded_columns.iter_mut().for_each(|c| *c += 1);
         }
+        expanded_columns.push(0);
     }
 
     Some(Image {
@@ -84,23 +84,19 @@ fn galaxy_distances(image: &Image, expansion_size: u128) -> u128 {
     let galaxies = find_galaxies(&image.image_data);
     let mut sum: u128 = 0;
     for (i, Position { x: x0, y: y0 }) in galaxies.iter().enumerate() {
-        for Position { x: x1, y: y1 } in galaxies.iter().skip(i) {
+        for Position { x: x1, y: y1 } in galaxies.iter().skip(i + 1) {
             let (min_x, max_x) = if x0 <= x1 { (x0, x1) } else { (x1, x0) };
             let (min_y, max_y) = if y0 <= y1 { (y0, y1) } else { (y1, y0) };
-            let (min_x, min_y, max_x, max_y) = (
-                *min_x as u128,
-                *min_y as u128,
-                *max_x as u128,
-                *max_y as u128,
-            );
 
-            let expanded_column_count = image.expanded_columns.range(min_x..max_x).count() as u128;
-            let expanded_row_count = image.expanded_rows.range(min_y..max_y).count() as u128;
+            let expanded_column_count =
+                image.expanded_columns[*min_x] - image.expanded_columns[*max_x];
 
-            let dx = max_x - min_x + expanded_column_count * (expansion_size - 1);
-            let dy = max_y - min_y + expanded_row_count * (expansion_size - 1);
+            let expanded_row_count = image.expanded_rows[*min_y] - image.expanded_rows[*max_y];
 
-            let path_length = (dx.min(dy) * 2) + dx.max(dy) - dx.min(dy);
+            let dx = (max_x - min_x) as u128 + expanded_column_count * (expansion_size - 1);
+            let dy = (max_y - min_y) as u128 + expanded_row_count * (expansion_size - 1);
+
+            let path_length = dx + dy;
             sum += path_length;
         }
     }
@@ -140,24 +136,24 @@ mod tests {
 #...#.....";
 
     /*
-    ....1........
-    .........2...
-    3............
-    .............
-    .............
-    ........4....
-    .5...........
-    .##.........6
-    ..##.........
-    ...##........
-    ....##...7...
-    8....9.......
+    3322211100
+    ...#...... 2
+    .......#.. 2
+    #......... 2
+    .......... 1
+    ......#... 1
+    .#........ 1
+    .........# 1
+    .......... 0
+    .......#.. 0
+    #...#..... 0
     */
 
     #[test]
     fn test() {
         let image = parse_image(&SAMPLE_INPUT).unwrap();
-        assert_eq!(image.image_data.len(), 12);
-        assert_eq!(image.image_data[0].len(), 13);
+        assert_eq!(image.image_data.len(), 10);
+        assert_eq!(image.image_data[0].len(), 10);
+        galaxy_distances(&image, 2);
     }
 }
