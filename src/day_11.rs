@@ -1,73 +1,60 @@
-#[derive(PartialEq, Clone, Copy, Debug)]
-enum ImageData {
-    Galaxy,
-    Empty,
-}
-
+#[derive(Debug)]
 struct Position {
     x: usize,
     y: usize,
 }
 
-use ImageData::*;
-
 struct Image {
-    image_data: Vec<Vec<ImageData>>,
+    galaxies: Vec<Position>,
     expanded_rows: Vec<u128>,
     expanded_columns: Vec<u128>,
 }
 
 fn parse_image(input: &str) -> Option<Image> {
-    let capacity = input.lines().count();
-    let mut expanded_rows = Vec::with_capacity(capacity);
-    let mut expanded_columns = Vec::with_capacity(capacity);
+    let size = input.lines().count();
+    let mut expanded_rows = Vec::with_capacity(size);
+    let mut columns_with_galaxies = vec![false; size];
     let mut count = 0;
-    let image_data = input
-        .lines()
-        .fold(Vec::<Vec<ImageData>>::new(), |mut image, line| {
-            let row = line
-                .chars()
-                .map(|c| match c {
-                    '#' => Galaxy,
-                    _ => Empty,
-                })
-                .collect::<Vec<ImageData>>();
+    let galaxies =
+        input
+            .lines()
+            .enumerate()
+            .fold(Vec::<Position>::new(), |mut positions, (y, line)| {
+                let row = line
+                    .chars()
+                    .enumerate()
+                    .filter_map(|(x, c)| match c {
+                        '#' => {
+                            columns_with_galaxies[x] = true;
+                            Some(Position { x, y })
+                        }
+                        _ => None,
+                    })
+                    .collect::<Vec<Position>>();
 
-            if !row.contains(&Galaxy) {
-                count += 1;
-            }
-            expanded_rows.push(count);
+                if row.len() == 0 {
+                    count += 1;
+                }
+                expanded_rows.push(count);
 
-            image.push(row);
+                positions.extend(row);
+                positions
+            });
 
-            image
-        });
-
-    for x in 0..image_data.first()?.len() {
-        if !image_data.iter().any(|row| row[x] == Galaxy) {
+    count = 0;
+    let mut expanded_columns = Vec::with_capacity(size);
+    for x in columns_with_galaxies {
+        if !x {
             count += 1;
         }
         expanded_columns.push(count);
     }
 
     Some(Image {
-        image_data,
         expanded_rows,
         expanded_columns,
+        galaxies,
     })
-}
-
-fn find_galaxies(image: &Vec<Vec<ImageData>>) -> Vec<Position> {
-    image
-        .iter()
-        .enumerate()
-        .fold(Vec::new(), |mut acc, (y, row)| {
-            acc.extend(row.iter().enumerate().filter_map(|(x, d)| match d {
-                Galaxy => Some(Position { x, y }),
-                _ => None,
-            }));
-            acc
-        })
 }
 
 pub struct Puzzle(String);
@@ -83,7 +70,7 @@ impl Puzzle {
 }
 
 fn galaxy_distances(image: &Image, expansion_size: u128) -> u128 {
-    let galaxies = find_galaxies(&image.image_data);
+    let galaxies = &image.galaxies;
     let mut sum: u128 = 0;
     for (i, Position { x: x0, y: min_y }) in galaxies.iter().enumerate() {
         for Position { x: x1, y: max_y } in galaxies.iter().skip(i + 1) {
@@ -134,25 +121,10 @@ mod tests {
 .......#..
 #...#.....";
 
-    /*
-    3322211100
-    ...#...... 2
-    .......#.. 2
-    #......... 2
-    .......... 1
-    ......#... 1
-    .#........ 1
-    .........# 1
-    .......... 0
-    .......#.. 0
-    #...#..... 0
-    */
-
     #[test]
     fn test() {
         let image = parse_image(&SAMPLE_INPUT).unwrap();
-        assert_eq!(image.image_data.len(), 10);
-        assert_eq!(image.image_data[0].len(), 10);
-        galaxy_distances(&image, 2);
+        assert_eq!(galaxy_distances(&image, 2), 374);
+        assert_eq!(galaxy_distances(&image, 100), 8410);
     }
 }
