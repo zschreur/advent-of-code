@@ -18,8 +18,10 @@ struct Image {
 }
 
 fn parse_image(input: &str) -> Option<Image> {
-    let mut expanded_rows = Vec::new();
-    let mut expanded_columns = Vec::new();
+    let capacity = input.lines().count();
+    let mut expanded_rows = Vec::with_capacity(capacity);
+    let mut expanded_columns = Vec::with_capacity(capacity);
+    let mut count = 0;
     let image_data = input
         .lines()
         .fold(Vec::<Vec<ImageData>>::new(), |mut image, line| {
@@ -32,9 +34,9 @@ fn parse_image(input: &str) -> Option<Image> {
                 .collect::<Vec<ImageData>>();
 
             if !row.contains(&Galaxy) {
-                expanded_rows.iter_mut().for_each(|c| *c += 1);
+                count += 1;
             }
-            expanded_rows.push(0);
+            expanded_rows.push(count);
 
             image.push(row);
 
@@ -43,9 +45,9 @@ fn parse_image(input: &str) -> Option<Image> {
 
     for x in 0..image_data.first()?.len() {
         if !image_data.iter().any(|row| row[x] == Galaxy) {
-            expanded_columns.iter_mut().for_each(|c| *c += 1);
+            count += 1;
         }
-        expanded_columns.push(0);
+        expanded_columns.push(count);
     }
 
     Some(Image {
@@ -83,21 +85,18 @@ impl Puzzle {
 fn galaxy_distances(image: &Image, expansion_size: u128) -> u128 {
     let galaxies = find_galaxies(&image.image_data);
     let mut sum: u128 = 0;
-    for (i, Position { x: x0, y: y0 }) in galaxies.iter().enumerate() {
-        for Position { x: x1, y: y1 } in galaxies.iter().skip(i + 1) {
+    for (i, Position { x: x0, y: min_y }) in galaxies.iter().enumerate() {
+        for Position { x: x1, y: max_y } in galaxies.iter().skip(i + 1) {
             let (min_x, max_x) = if x0 <= x1 { (x0, x1) } else { (x1, x0) };
-            let (min_y, max_y) = if y0 <= y1 { (y0, y1) } else { (y1, y0) };
 
             let expanded_column_count =
-                image.expanded_columns[*min_x] - image.expanded_columns[*max_x];
+                image.expanded_columns[*max_x] - image.expanded_columns[*min_x];
 
-            let expanded_row_count = image.expanded_rows[*min_y] - image.expanded_rows[*max_y];
+            let expanded_row_count = image.expanded_rows[*max_y] - image.expanded_rows[*min_y];
 
-            let dx = (max_x - min_x) as u128 + expanded_column_count * (expansion_size - 1);
-            let dy = (max_y - min_y) as u128 + expanded_row_count * (expansion_size - 1);
-
-            let path_length = dx + dy;
-            sum += path_length;
+            sum += (expansion_size - 1) * (expanded_row_count + expanded_column_count)
+                + (max_x - min_x) as u128
+                + (max_y - min_y) as u128;
         }
     }
 
