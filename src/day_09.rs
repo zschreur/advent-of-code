@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 pub struct Puzzle(Vec<Vec<i32>>);
 
 impl Puzzle {
@@ -50,13 +48,11 @@ fn find_next_value(sequence: &Vec<i32>) -> i32 {
         .windows(2)
         .map(|w| &w[1] - &w[0])
         .collect::<Vec<i32>>();
-    let s = HashSet::<&i32>::from_iter(d.iter());
 
-    sequence.last().unwrap()
-        + if s.len() == 1 {
-            d[0]
-        } else {
-            find_next_value(&d)
+    sequence.last().unwrap_or(&0)
+        + match d.first().and_then(|f| d.iter().all(|v| v == f).then(|| f)) {
+            Some(res) => *res,
+            None => find_next_value(&d),
         }
 }
 
