@@ -28,7 +28,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             None
         }
     } {
-        PuzzleRunner::run(puzzle);
+        puzzle.run();
     }
     Ok(())
 }

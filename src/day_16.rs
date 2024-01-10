@@ -259,7 +259,7 @@ impl super::Puzzle for Puzzle {
         let mut grid = Grid::from_input(&self.0).map_err(|_| "Invalid input")?;
         grid.add_beam(Position { x: 0, y: 0 }, Direction::Right);
 
-        Ok(super::AOCResult::ULong(grid.run_simulation()))
+        Ok(super::AOCResult::U128(grid.run_simulation()))
     }
 
     fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
@@ -293,7 +293,7 @@ impl super::Puzzle for Puzzle {
             })
             .max()
             .ok_or("No solution")?;
-        Ok(super::AOCResult::ULong(res))
+        Ok(super::AOCResult::U128(res))
     }
 }
 

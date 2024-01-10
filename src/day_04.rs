@@ -82,13 +82,13 @@ impl super::Puzzle for Puzzle {
     fn run_part_one(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let result = self.calculate_points();
 
-        Ok(super::AOCResult::ULong(result as u128))
+        Ok(super::AOCResult::U32(result))
     }
 
     fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let result = self.total_scratch_cards();
 
-        Ok(super::AOCResult::ULong(result as u128))
+        Ok(super::AOCResult::USize(result))
     }
 }
 

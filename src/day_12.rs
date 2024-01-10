@@ -168,7 +168,7 @@ impl super::Puzzle for Puzzle {
             })
             .sum::<u128>();
 
-        Ok(super::AOCResult::ULong(res))
+        Ok(super::AOCResult::U128(res))
     }
 
     fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
@@ -188,7 +188,7 @@ impl super::Puzzle for Puzzle {
             })
             .sum::<u128>();
 
-        Ok(super::AOCResult::ULong(res))
+        Ok(super::AOCResult::U128(res))
     }
 }
 

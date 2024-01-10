@@ -172,7 +172,7 @@ impl super::Puzzle for Puzzle {
         platform.tilt(Direction::North);
 
         let load = platform.calculate_load();
-        Ok(super::AOCResult::ULong(load as u128))
+        Ok(super::AOCResult::USize(load))
     }
 
     fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
@@ -211,7 +211,7 @@ impl super::Puzzle for Puzzle {
                 break;
             }
         }
-        res.map(|v| super::AOCResult::ULong(v as u128))
+        res.map(|v| super::AOCResult::USize(v))
             .ok_or("Error".into())
     }
 }

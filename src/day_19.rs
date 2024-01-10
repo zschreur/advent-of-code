@@ -310,14 +310,14 @@ impl super::Puzzle for Puzzle {
         let a = Aplenty::from_input(&self.0);
         let res = a.filter_parts();
 
-        Ok(crate::AOCResult::ULong(res as u128))
+        Ok(crate::AOCResult::U128(res))
     }
 
     fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let a = Aplenty::from_input(&self.0);
         let res = a.acceptable_combinations([(1, 4000); 4], parse_id("in"));
 
-        Ok(crate::AOCResult::ULong(res as u128))
+        Ok(crate::AOCResult::U128(res))
     }
 }
 

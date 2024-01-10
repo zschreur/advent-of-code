@@ -67,17 +67,21 @@ pub mod setup {
 }
 
 pub enum AOCResult {
-    ULong(u128),
+    U128(u128),
+    U64(u64),
+    U32(u32),
     USize(usize),
-    Long(i128),
+    I32(i32),
 }
 
 impl std::fmt::Display for AOCResult {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            AOCResult::ULong(n) => write!(f, "{}", n),
-            AOCResult::Long(n) => write!(f, "{}", n),
+            AOCResult::U128(n) => write!(f, "{}", n),
+            AOCResult::U64(n) => write!(f, "{}", n),
+            AOCResult::U32(n) => write!(f, "{}", n),
             AOCResult::USize(n) => write!(f, "{}", n),
+            AOCResult::I32(n) => write!(f, "{}", n),
         }
     }
 }
@@ -87,14 +91,12 @@ pub trait Puzzle {
     fn run_part_two(&self) -> Result<AOCResult, Box<dyn std::error::Error>>;
 }
 
-pub struct PuzzleRunner {}
-
-impl PuzzleRunner {
-    pub fn run(puzzle: Box<dyn Puzzle>) {
+impl dyn Puzzle {
+    pub fn run(&self) {
         use std::time::Instant;
         let t0 = Instant::now();
         let mut total_time: std::time::Duration = std::time::Duration::ZERO;
-        match puzzle.run_part_one() {
+        match self.run_part_one() {
             Ok(res) => {
                 let t0_elapsed = t0.elapsed();
                 total_time += t0_elapsed;
@@ -104,7 +106,7 @@ impl PuzzleRunner {
             Err(e) => println!("Part 1 failed: {}", e),
         }
         let t1 = Instant::now();
-        match puzzle.run_part_two() {
+        match self.run_part_two() {
             Ok(res) => {
                 let t1_elapsed = t1.elapsed();
                 total_time += t1_elapsed;

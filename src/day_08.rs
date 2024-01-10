@@ -133,7 +133,7 @@ impl super::Puzzle for Puzzle {
     fn run_part_one(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let (directions, map) = parse_map(&self.0).expect("Issue parsing input");
         let res = run_part_one(directions, map).expect("Issue running part one");
-        Ok(super::AOCResult::ULong(res))
+        Ok(super::AOCResult::U128(res))
     }
 
     fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
@@ -154,7 +154,7 @@ impl super::Puzzle for Puzzle {
         let a = counts.first().unwrap();
         let b = counts.split_at(1).1;
         let res = lcm(*a, &b);
-        Ok(super::AOCResult::ULong(res))
+        Ok(super::AOCResult::U128(res))
     }
 }
 

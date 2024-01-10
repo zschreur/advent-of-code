@@ -299,7 +299,7 @@ impl super::Puzzle for Puzzle {
 
         let length = loop_points.len();
 
-        Ok(super::AOCResult::ULong(length as u128 / 2))
+        Ok(super::AOCResult::USize(length / 2))
     }
 
     fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
@@ -309,7 +309,7 @@ impl super::Puzzle for Puzzle {
         let enclosed_points = loop_scanner.find_enclosed_points();
         let res = enclosed_points.len();
 
-        Ok(super::AOCResult::ULong(res as u128))
+        Ok(super::AOCResult::USize(res))
     }
 }
 

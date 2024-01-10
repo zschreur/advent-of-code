@@ -78,12 +78,12 @@ impl Puzzle {
 impl super::Puzzle for Puzzle {
     fn run_part_one(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let result = parse_trebuchet_calibration(&self.0, first_and_last_digit);
-        Ok(super::AOCResult::ULong(result as u128))
+        Ok(super::AOCResult::USize(result))
     }
 
     fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let result = parse_trebuchet_calibration(&self.0, first_and_last_number);
-        Ok(super::AOCResult::ULong(result as u128))
+        Ok(super::AOCResult::USize(result))
     }
 }
 

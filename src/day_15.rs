@@ -54,12 +54,12 @@ impl Puzzle {
 impl super::Puzzle for Puzzle {
     fn run_part_one(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let res = run_initialization_sequence(self.0.split(",").collect());
-        Ok(super::AOCResult::ULong(res))
+        Ok(super::AOCResult::U128(res))
     }
 
     fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let res = calculate_focusing_power(self.0.split(",").collect());
-        Ok(super::AOCResult::ULong(res))
+        Ok(super::AOCResult::U128(res))
     }
 }
 

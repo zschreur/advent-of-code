@@ -62,7 +62,7 @@ impl super::Puzzle for Puzzle {
             .reduce(|acc, x| acc * x)
             .unwrap();
 
-        Ok(super::AOCResult::ULong(res as u128))
+        Ok(super::AOCResult::U128(res))
     }
 
     fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
@@ -93,7 +93,7 @@ impl super::Puzzle for Puzzle {
         let game = self.parse_input(parser).unwrap();
         let res = ways_to_win(game.0, game.1);
 
-        Ok(super::AOCResult::ULong(res as u128))
+        Ok(super::AOCResult::U128(res))
     }
 }
 

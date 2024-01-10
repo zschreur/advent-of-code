@@ -138,7 +138,7 @@ impl super::Puzzle for Puzzle {
             })
             .fold(0, |acc, s| acc + s.value);
 
-        Ok(super::AOCResult::ULong(res as u128))
+        Ok(super::AOCResult::USize(res))
     }
 
     fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
@@ -168,7 +168,7 @@ impl super::Puzzle for Puzzle {
             })
             .fold(0, |acc, v| acc + v);
 
-        Ok(super::AOCResult::ULong(res as u128))
+        Ok(super::AOCResult::USize(res))
     }
 }
 

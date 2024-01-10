@@ -157,7 +157,7 @@ impl super::Puzzle for Puzzle {
         let grid = Grid::<_>::new(blocks.len(), blocks);
         let res = djikstra(&grid, false)
             .ok_or("No path found")
-            .map(|v| super::AOCResult::ULong(v as u128))?;
+            .map(|v| super::AOCResult::USize(v))?;
 
         Ok(res)
     }
@@ -176,7 +176,7 @@ impl super::Puzzle for Puzzle {
         let grid = Grid::<_>::new(blocks.len(), blocks);
         let res = djikstra(&grid, true)
             .ok_or("No path found")
-            .map(|v| super::AOCResult::ULong(v as u128))?;
+            .map(|v| super::AOCResult::USize(v))?;
 
         Ok(res)
     }

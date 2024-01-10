@@ -28,9 +28,7 @@ impl super::Puzzle for Puzzle {
             .iter()
             .map(|seq| find_next_value(&seq))
             .reduce(|acc, v| acc + v);
-        // println!("Part 1: {}", res.unwrap());
-        res.map(|v| super::AOCResult::Long(v as i128))
-            .ok_or("Error".into())
+        res.map(|v| super::AOCResult::I32(v)).ok_or("Error".into())
     }
 
     fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
@@ -43,8 +41,7 @@ impl super::Puzzle for Puzzle {
                 find_next_value(&v)
             })
             .reduce(|acc, v| acc + v);
-        res.map(|v| super::AOCResult::Long(v as i128))
-            .ok_or("Error".into())
+        res.map(|v| super::AOCResult::I32(v)).ok_or("Error".into())
     }
 }
 

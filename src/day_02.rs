@@ -117,7 +117,7 @@ impl super::Puzzle for Puzzle {
             .map(|game| game.id)
             .sum::<usize>();
 
-        Ok(super::AOCResult::ULong(result as u128))
+        Ok(super::AOCResult::USize(result))
     }
 
     fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
@@ -129,7 +129,7 @@ impl super::Puzzle for Puzzle {
             .map(|set| power_of_set(&set))
             .sum::<usize>();
 
-        Ok(super::AOCResult::ULong(result as u128))
+        Ok(super::AOCResult::USize(result))
     }
 }
 
