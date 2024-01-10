@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum Pipe {
     NorthSouth,
@@ -20,16 +18,17 @@ enum Direction {
 
 type Map = Vec<Vec<Option<Pipe>>>;
 
-#[derive(Debug, PartialEq, Clone, Copy, Hash, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 struct Position {
     x: usize,
     y: usize,
 }
 
 fn get_initial_state(map: &Map, starting_position: &Position) -> Pipe {
-    let north = map
-        .get(starting_position.y - 1)
-        .and_then(|row| row.get(starting_position.x))
+    let north = starting_position
+        .y
+        .checked_sub(1)
+        .and_then(|y| map.get(y).and_then(|row| row.get(starting_position.x)))
         .unwrap_or(&None);
     let north = match north {
         Some(Pipe::SouthEast) | Some(Pipe::SouthWest) | Some(Pipe::NorthSouth) => true,
@@ -51,9 +50,10 @@ fn get_initial_state(map: &Map, starting_position: &Position) -> Pipe {
         Some(Pipe::NorthWest) | Some(Pipe::SouthWest) | Some(Pipe::EastWest) => true,
         _ => false,
     };
-    let west = map
-        .get(starting_position.y)
-        .and_then(|row| row.get(starting_position.x - 1))
+    let west = starting_position
+        .x
+        .checked_sub(1)
+        .and_then(|x| map.get(starting_position.y).and_then(|row| row.get(x)))
         .unwrap_or(&None);
     let west = match west {
         Some(Pipe::SouthEast) | Some(Pipe::NorthEast) | Some(Pipe::EastWest) => true,
@@ -128,7 +128,7 @@ struct PipeNavigator<'a> {
     heading: Direction,
     position: Position,
     current_pipe: Pipe,
-    visited: HashSet<Position>,
+    visited: Vec<Position>,
 }
 
 impl<'a> PipeNavigator<'a> {
@@ -145,8 +145,8 @@ impl<'a> PipeNavigator<'a> {
             Pipe::SouthWest | Pipe::SouthEast => Direction::North,
             Pipe::EastWest => Direction::East,
         };
-        let mut visited = HashSet::new();
-        visited.insert(diagram.starting_position);
+        let mut visited = Vec::new();
+        visited.push(diagram.starting_position);
 
         Self {
             diagram,
@@ -212,7 +212,7 @@ impl<'a> PipeNavigator<'a> {
         };
         self.position = next_position;
         self.heading = next_heading;
-        self.visited.insert(self.position);
+        self.visited.push(self.position);
     }
 
     fn is_at_starting_position(&self) -> bool {
@@ -220,7 +220,7 @@ impl<'a> PipeNavigator<'a> {
     }
 }
 
-fn find_loop_points(diagram: &Diagram) -> HashSet<Position> {
+fn find_loop_points(diagram: &Diagram) -> Vec<Position> {
     let mut pipe_navigator = PipeNavigator::new(&diagram);
     loop {
         pipe_navigator.step();
@@ -230,54 +230,6 @@ fn find_loop_points(diagram: &Diagram) -> HashSet<Position> {
     }
 
     pipe_navigator.visited
-}
-
-fn find_points_on_row(
-    row: &Vec<Option<Pipe>>,
-    loop_points: &HashSet<Position>,
-    y: usize,
-) -> HashSet<Position> {
-    let mut inside = false;
-    let mut points = HashSet::new();
-
-    for (x, pipe) in row.iter().enumerate() {
-        if loop_points.contains(&Position { x, y }) {
-            let pipe = pipe.expect("Unexpected None loop point");
-            match pipe {
-                Pipe::NorthSouth | Pipe::SouthEast | Pipe::SouthWest => {
-                    inside = !inside;
-                }
-                _ => (),
-            }
-        } else {
-            if inside {
-                points.insert(Position { x, y });
-            }
-        }
-    }
-
-    points
-}
-
-struct LoopScanner<'a> {
-    loop_points: &'a HashSet<Position>,
-    map: &'a Map,
-}
-
-impl<'a> LoopScanner<'a> {
-    fn new(loop_points: &'a HashSet<Position>, map: &'a Map) -> Self {
-        Self { loop_points, map }
-    }
-
-    fn find_enclosed_points(&self) -> HashSet<Position> {
-        let mut points = HashSet::new();
-        for (y, row) in self.map.iter().enumerate() {
-            let points_on_row = find_points_on_row(&row, &self.loop_points, y);
-            points.extend(points_on_row.iter());
-        }
-
-        points
-    }
 }
 
 pub struct Puzzle(String);
@@ -305,9 +257,17 @@ impl super::Puzzle for Puzzle {
     fn run_part_two(&self) -> Result<super::AOCResult, Box<dyn std::error::Error>> {
         let diagram = parse_diagram(&self.0);
         let loop_points = find_loop_points(&diagram);
-        let loop_scanner = LoopScanner::new(&loop_points, &diagram.map);
-        let enclosed_points = loop_scanner.find_enclosed_points();
-        let res = enclosed_points.len();
+
+        let sum = loop_points.windows(2).fold(0i32, |acc, w| {
+            let x1 = w[0].x as i32;
+            let x2 = w[1].x as i32;
+            let y1 = w[0].y as i32;
+            let y2 = w[1].y as i32;
+            acc + ((x2 + x1) * (y2 - y1))
+        });
+        let area = sum.abs() as usize >> 1;
+        let boundary_points = loop_points.len();
+        let res = area - (boundary_points >> 1) + 1;
 
         Ok(super::AOCResult::USize(res))
     }
@@ -328,5 +288,37 @@ L|-JF";
         let map = parse_diagram(&SAMPLE_INPUT);
         assert_eq!(map.map.len(), 5);
         assert_eq!(map.map[0].len(), 5);
+    }
+
+    #[test]
+    fn test_picks() {
+        let diagram = parse_diagram(
+            "...........
+.S-------7.
+.|F-----7|.
+.||.....||.
+.||.....||.
+.|L-7.F-J|.
+.|..|.|..|.
+.L--J.L--J.
+...........",
+        );
+        let loop_points = find_loop_points(&diagram);
+
+        let sum = loop_points.windows(2).fold(0i32, |acc, w| {
+            let x1 = w[0].x as i32;
+            let x2 = w[1].x as i32;
+            let y1 = w[0].y as i32;
+            let y2 = w[1].y as i32;
+            let ysub = y2
+                .checked_sub(y1)
+                .expect(format!("{} - {}", y2, y1).as_str());
+            acc + ((x2 + x1) * (ysub))
+        });
+        let area = sum.abs() as usize >> 1;
+        let boundary_points = loop_points.len();
+        let res = area - (boundary_points >> 1) + 1;
+
+        assert_eq!(res, 4);
     }
 }
