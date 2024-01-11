@@ -18,48 +18,47 @@ impl HandCalculator {
     }
 }
 
+fn card_pos(c: &char) -> usize {
+    match c {
+        'A' => 0,
+        'K' => 1,
+        'Q' => 2,
+        'J' => 3,
+        'T' => 4,
+        c => 12 - (*c as u8 - '2' as u8) as usize,
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 struct JokerHand(u128);
 impl JokerHand {
     fn parse_rank(s: &str) -> u128 {
-        let mut cards = s
-            .chars()
-            .fold(std::collections::HashMap::new(), |mut acc, c| {
-                if let Some(k) = acc.get_mut(&c) {
-                    *k += 1u8;
-                } else {
-                    acc.insert(c, 1);
-                }
+        let mut cards = s.chars().fold([0; 13], |mut acc, c| {
+            let pos = card_pos(&c);
+            acc[pos] += 1usize;
 
-                acc
-            });
+            acc
+        });
 
-        let joker_count = *(cards.get(&'J').unwrap_or(&0));
-        if let Some((card, count)) = cards
-            .iter()
-            .filter(|(card, _)| *card != &'J')
-            .max_by(|(_, x), (_, y)| x.cmp(y))
-            .map(|(card, count)| (*card, *count))
-        {
-            if let Some(c) = cards.get_mut(&card) {
-                *c = joker_count + count;
-                cards.remove(&'J');
-            }
+        let joker_count = cards[3];
+        cards[3] = 0;
+        if let Some(m) = cards.iter_mut().max_by(|a, b| a.cmp(&b)) {
+            *m += joker_count;
         }
 
-        let card_counts = cards.values().map(|v| *v).collect::<Vec<u8>>();
-        match card_counts.len() {
+        let card_counts = cards.iter().filter(|&c| c > &0).count();
+
+        match card_counts {
             1 => 6,
             2 => {
-                let first_card = card_counts[0];
-                if first_card == 1 || first_card == 4 {
+                if cards.contains(&&1) || cards.contains(&&4) {
                     5
                 } else {
                     4
                 }
             }
             3 => {
-                if card_counts.contains(&3) {
+                if cards.contains(&&3) {
                     3
                 } else {
                     2
@@ -75,31 +74,26 @@ impl JokerHand {
 struct BasicHand(u128);
 impl BasicHand {
     fn parse_rank(s: &str) -> u128 {
-        let cards = s
-            .chars()
-            .fold(std::collections::HashMap::new(), |mut acc, c| {
-                if let Some(k) = acc.get_mut(&c) {
-                    *k += 1u8;
-                } else {
-                    acc.insert(c, 1);
-                }
+        let cards = s.chars().fold([0; 13], |mut acc, c| {
+            let pos = card_pos(&c);
+            acc[pos] += 1usize;
 
-                acc
-            });
+            acc
+        });
 
-        let card_counts = cards.values().map(|v| *v).collect::<Vec<u8>>();
-        match card_counts.len() {
+        let card_counts = cards.iter().filter(|&c| c > &0).count();
+
+        match card_counts {
             1 => 6,
             2 => {
-                let first_card = card_counts[0];
-                if first_card == 1 || first_card == 4 {
+                if cards.contains(&&1) || cards.contains(&&4) {
                     5
                 } else {
                     4
                 }
             }
             3 => {
-                if card_counts.contains(&3) {
+                if cards.contains(&&3) {
                     3
                 } else {
                     2
