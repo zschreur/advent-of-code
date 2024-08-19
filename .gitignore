@@ -1,3 +1,4 @@
-puzzle-inputs/
+input/
 .zig-cache/
 zig-out/
+target/
