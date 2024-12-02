@@ -3,6 +3,7 @@ const PuzzleArgs = @import("./aoc_args.zig").PuzzleArgs;
 
 const day0 = @import("./day0.zig");
 const day1 = @import("./day1.zig");
+const day2 = @import("./day2.zig");
 
 fn runPuzzle(args: PuzzleArgs) !void {
     const day = args.day;
@@ -15,6 +16,7 @@ fn runPuzzle(args: PuzzleArgs) !void {
         const result = try switch (day) {
             0 => day0.partOne(reader),
             1 => day1.partOne(reader),
+            2 => day2.partOne(reader),
             else => unreachable(),
         };
         const lap = timer.lap();
@@ -30,6 +32,7 @@ fn runPuzzle(args: PuzzleArgs) !void {
         const result = try switch (day) {
             0 => day0.partTwo(reader),
             1 => day1.partTwo(reader),
+            2 => day2.partTwo(reader),
             else => unreachable(),
         };
         const lap = timer.lap();
@@ -50,4 +53,5 @@ pub fn main() !void {
 test {
     _ = @import("./day0.zig");
     _ = @import("./day1.zig");
+    _ = @import("./day2.zig");
 }
