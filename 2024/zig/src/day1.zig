@@ -25,7 +25,7 @@ const Lists = struct {
     }
 };
 
-pub fn partOne(puzzle_input: []const u8) !u64 {
+pub fn partOne(puzzle_input: []const u8) !u32 {
     var left_buf: [2048]u32 = undefined;
     var right_buf: [2048]u32 = undefined;
 
@@ -41,10 +41,10 @@ pub fn partOne(puzzle_input: []const u8) !u64 {
         total_distance += if (left > right) left - right else right - left;
     }
 
-    return @intCast(total_distance);
+    return total_distance;
 }
 
-pub fn partTwo(puzzle_input: []const u8) !u64 {
+pub fn partTwo(puzzle_input: []const u8) !usize {
     var left_buf: [2048]u32 = undefined;
     var right_buf: [2048]u32 = undefined;
 
@@ -56,14 +56,14 @@ pub fn partTwo(puzzle_input: []const u8) !u64 {
     var id_counts: [2048]usize = undefined;
     var i: usize = 0;
 
-    var similarity_score: u64 = 0;
+    var similarity_score: usize = 0;
     for (left_ids) |id| {
         if (std.mem.indexOfScalar(u32, seen_ids[0..i], id)) |seen_index| {
-            similarity_score += @as(u64, @intCast(id)) * id_counts[seen_index];
+            similarity_score += id * id_counts[seen_index];
         } else {
             id_counts[i] = std.mem.count(u32, right_ids, &[1]u32{id});
             seen_ids[i] = id;
-            similarity_score += @as(u64, @intCast(id)) * id_counts[i];
+            similarity_score += id * id_counts[i];
             i += 1;
         }
     }

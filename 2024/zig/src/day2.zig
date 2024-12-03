@@ -1,28 +1,28 @@
 const std = @import("std");
 
-fn checkTolerance(increasing: bool, prev: u64, next: u64) bool {
-    const levels = if (increasing) [_]u64{ next, prev } else [_]u64{ prev, next };
+fn checkTolerance(increasing: bool, prev: u8, next: u8) bool {
+    const levels = if (increasing) [_]u8{ next, prev } else [_]u8{ prev, next };
     const a = levels[0];
     const b = levels[1];
 
     return a > b and a - b >= 1 and a - b <= 3;
 }
 
-pub fn partOne(puzzle_input: []const u8) !u64 {
-    var safe_count: u64 = 0;
+pub fn partOne(puzzle_input: []const u8) !usize {
+    var safe_count: usize = 0;
 
     var line_it = std.mem.splitScalar(u8, puzzle_input, '\n');
     line_loop: while (line_it.next()) |line| {
         var it = std.mem.splitScalar(u8, line, ' ');
-        var prev: u64 = try std.fmt.parseInt(u64, it.first(), 10);
+        var prev = try std.fmt.parseInt(u8, it.first(), 10);
 
         const increasing = blk: {
-            const next = try std.fmt.parseInt(u64, it.peek().?, 10);
+            const next = try std.fmt.parseInt(u8, it.peek().?, 10);
             break :blk next > prev;
         };
 
         while (it.next()) |s| {
-            const level = try std.fmt.parseInt(u64, s, 10);
+            const level = try std.fmt.parseInt(u8, s, 10);
             if (checkTolerance(increasing, prev, level)) {
                 prev = level;
             } else {
@@ -67,8 +67,8 @@ fn checkDeltas(V: type, deltas_vec: V) bool {
     return true;
 }
 
-pub fn partTwo(puzzle_input: []const u8) !u64 {
-    var safe_count: u64 = 0;
+pub fn partTwo(puzzle_input: []const u8) !usize {
+    var safe_count: usize = 0;
 
     var levels_buf: [8]i8 = .{0} ** 8;
     var line_it = std.mem.splitScalar(u8, puzzle_input, '\n');
