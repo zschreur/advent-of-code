@@ -2,6 +2,7 @@ const std = @import("std");
 const day0 = @import("./day0.zig");
 const day1 = @import("./day1.zig");
 const day2 = @import("./day2.zig");
+const day3 = @import("./day3.zig");
 
 const puzzle_input = std.mem.trim(
     u8,
@@ -17,6 +18,7 @@ pub fn main() !void {
             0 => day0.partOne(puzzle_input),
             1 => day1.partOne(puzzle_input),
             2 => day2.partOne(puzzle_input),
+            3 => day3.partOne(puzzle_input),
             else => @compileError("Day is not implemented"),
         };
         const lap = timer.lap();
@@ -30,6 +32,7 @@ pub fn main() !void {
             0 => day0.partTwo(puzzle_input),
             1 => day1.partTwo(puzzle_input),
             2 => day2.partTwo(puzzle_input),
+            3 => day3.partTwo(puzzle_input),
             else => @compileError("Day is not implemented"),
         };
         const lap = timer.lap();
@@ -42,4 +45,5 @@ test {
     _ = @import("./day0.zig");
     _ = @import("./day1.zig");
     _ = @import("./day2.zig");
+    _ = @import("./day3.zig");
 }
