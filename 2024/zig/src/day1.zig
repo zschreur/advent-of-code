@@ -6,10 +6,10 @@ const Lists = struct {
 
     const Self = @This();
 
-    fn parseInput(input_reader: anytype, left_buf: []u32, right_buf: []u32) !Self {
+    fn parseInput(puzzle_input: []const u8, left_buf: []u32, right_buf: []u32) !Self {
         var count: usize = 0;
-        var buf: [16]u8 = undefined;
-        while (try input_reader.readUntilDelimiterOrEof(&buf, '\n')) |line| {
+        var line_it = std.mem.splitScalar(u8, puzzle_input, '\n');
+        while (line_it.next()) |line| {
             var it = std.mem.splitSequence(u8, line, "   ");
             const left = try std.fmt.parseInt(u32, it.first(), 10);
             const right = try std.fmt.parseInt(u32, it.next().?, 10);
@@ -25,11 +25,11 @@ const Lists = struct {
     }
 };
 
-pub fn partOne(input_reader: anytype) !u64 {
+pub fn partOne(puzzle_input: []const u8) !u64 {
     var left_buf: [2048]u32 = undefined;
     var right_buf: [2048]u32 = undefined;
 
-    const lists = try Lists.parseInput(input_reader, &left_buf, &right_buf);
+    const lists = try Lists.parseInput(puzzle_input, &left_buf, &right_buf);
     const left_ids = lists.left_ids;
     const right_ids = lists.right_ids;
 
@@ -44,11 +44,11 @@ pub fn partOne(input_reader: anytype) !u64 {
     return @intCast(total_distance);
 }
 
-pub fn partTwo(input_reader: anytype) !u64 {
+pub fn partTwo(puzzle_input: []const u8) !u64 {
     var left_buf: [2048]u32 = undefined;
     var right_buf: [2048]u32 = undefined;
 
-    const lists = try Lists.parseInput(input_reader, &left_buf, &right_buf);
+    const lists = try Lists.parseInput(puzzle_input, &left_buf, &right_buf);
     const left_ids = lists.left_ids;
     const right_ids = lists.right_ids;
 
@@ -82,17 +82,13 @@ const sample_input =
 
 const testing = @import("std").testing;
 test "part one" {
-    var stream = std.io.fixedBufferStream(sample_input);
-    const reader = stream.reader();
-    const result = try partOne(reader);
+    const result = try partOne(sample_input);
 
     try testing.expectEqual(11, result);
 }
 
 test "part two" {
-    var stream = std.io.fixedBufferStream(sample_input);
-    const reader = stream.reader();
-    const result = try partTwo(reader);
+    const result = try partTwo(sample_input);
 
     try testing.expectEqual(31, result);
 }

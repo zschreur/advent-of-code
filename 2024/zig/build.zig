@@ -6,29 +6,30 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    const day = b.option(u8, "day", "Day of puzzle to run") orelse 0;
+
+    const options = b.addOptions();
+    options.addOption(u8, "day", day);
+
     const exe = b.addExecutable(.{
-        .name = "advent-of-code",
+        .name = "day" ++ std.fmt.digits2(day),
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
 
+    exe.root_module.addOptions("config", options);
+    exe.root_module.addAnonymousImport(
+        "puzzle_input",
+        .{ .root_source_file = b.path(
+            "../input/day-" ++ std.fmt.digits2(day) ++ ".txt",
+        ) },
+    );
+
     b.installArtifact(exe);
 
     const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
-
-    const opt_day = b.option(u8, "day", "Day of puzzle to run");
-    if (opt_day) |day| {
-        run_cmd.addArg("-i");
-        run_cmd.addFileArg(b.path("../input/day-" ++ std.fmt.digits2(day) ++ ".txt"));
-        run_cmd.addArg("-d");
-        run_cmd.addArg(&std.fmt.digits2(day));
-    }
-
-    if (b.args) |args| {
-        run_cmd.addArgs(args);
-    }
 
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);

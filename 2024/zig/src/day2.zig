@@ -8,11 +8,11 @@ fn checkTolerance(increasing: bool, prev: u64, next: u64) bool {
     return a > b and a - b >= 1 and a - b <= 3;
 }
 
-pub fn partOne(input_reader: anytype) !u64 {
+pub fn partOne(puzzle_input: []const u8) !u64 {
     var safe_count: u64 = 0;
 
-    var buf: [24]u8 = undefined;
-    line_loop: while (try input_reader.readUntilDelimiterOrEof(&buf, '\n')) |line| {
+    var line_it = std.mem.splitScalar(u8, puzzle_input, '\n');
+    line_loop: while (line_it.next()) |line| {
         var it = std.mem.splitScalar(u8, line, ' ');
         var prev: u64 = try std.fmt.parseInt(u64, it.first(), 10);
 
@@ -36,8 +36,8 @@ pub fn partOne(input_reader: anytype) !u64 {
     return safe_count;
 }
 
-pub fn partTwo(input_reader: anytype) !u64 {
-    _ = &input_reader;
+pub fn partTwo(puzzle_input: []const u8) !u64 {
+    _ = &puzzle_input;
     return error.NotImplemented;
 }
 
@@ -53,17 +53,9 @@ const sample_input =
 
 const testing = @import("std").testing;
 test "part one" {
-    var stream = std.io.fixedBufferStream(sample_input);
-    const reader = stream.reader();
-    const result = try partOne(reader);
-
-    try testing.expectEqual(2, result);
+    try testing.expectEqual(2, partOne(sample_input));
 }
 
 test "part two" {
-    var stream = std.io.fixedBufferStream(sample_input);
-    const reader = stream.reader();
-    const result = try partTwo(reader);
-
-    try testing.expectEqual(5, result);
+    try testing.expectEqual(5, partTwo(sample_input));
 }
