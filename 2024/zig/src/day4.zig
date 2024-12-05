@@ -121,19 +121,11 @@ fn @"x-masSearch"(input: []const u8, allocator: anytype) !usize {
     return xmas_count;
 }
 
-pub fn partOne(input: []const u8) !usize {
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-
-    const allocator = arena.allocator();
+pub fn partOne(input: []const u8, allocator: std.mem.Allocator) !usize {
     return xmasSearch(input, allocator);
 }
 
-pub fn partTwo(input: []const u8) !usize {
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-
-    const allocator = arena.allocator();
+pub fn partTwo(input: []const u8, allocator: std.mem.Allocator) !usize {
     return @"x-masSearch"(input, allocator);
 }
 

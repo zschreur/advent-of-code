@@ -17,6 +17,18 @@ const puzzle_input = std.mem.trim(
 );
 const day = @import("config").day;
 
+fn ReturnType(comptime f: anytype) type {
+    return @typeInfo(@TypeOf(f)).@"fn".return_type.?;
+}
+
+fn runWithAllocator(comptime func: anytype) ReturnType(func) {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+
+    const allocator = arena.allocator();
+    return try @call(.auto, func, .{ puzzle_input, allocator });
+}
+
 pub fn main() !void {
     const stdout = std.io.getStdOut().writer();
     var buffer = std.io.bufferedWriter(stdout);
@@ -29,7 +41,7 @@ pub fn main() !void {
             1 => day1.partOne(puzzle_input),
             2 => day2.partOne(puzzle_input),
             3 => day3.partOne(puzzle_input),
-            4 => day4.partOne(puzzle_input),
+            4 => runWithAllocator(day4.partOne),
             else => @compileError("Day is not implemented"),
         };
         const lap = timer.lap();
@@ -51,7 +63,7 @@ pub fn main() !void {
             1 => day1.partTwo(puzzle_input),
             2 => day2.partTwo(puzzle_input),
             3 => day3.partTwo(puzzle_input),
-            4 => day4.partTwo(puzzle_input),
+            4 => runWithAllocator(day4.partTwo),
             else => @compileError("Day is not implemented"),
         };
         const lap = timer.lap();
