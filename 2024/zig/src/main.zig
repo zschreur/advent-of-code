@@ -5,6 +5,7 @@ const day2 = @import("./day2.zig");
 const day3 = @import("./day3.zig");
 const day4 = @import("./day4.zig");
 const day5 = @import("./day5.zig");
+const day6 = @import("./day6.zig");
 
 const label_color = "\x1b[38;5;250m";
 const time_color = "\x1b[38;5;38m";
@@ -44,6 +45,7 @@ pub fn main() !void {
             3 => day3.partOne(puzzle_input),
             4 => runWithAllocator(day4.partOne),
             5 => runWithAllocator(day5.partOne),
+            6 => runWithAllocator(day6.partOne),
             else => @compileError("Day is not implemented"),
         };
         const lap = timer.lap();
@@ -67,6 +69,7 @@ pub fn main() !void {
             3 => day3.partTwo(puzzle_input),
             4 => runWithAllocator(day4.partTwo),
             5 => runWithAllocator(day5.partTwo),
+            6 => runWithAllocator(day6.partTwo),
             else => @compileError("Day is not implemented"),
         };
         const lap = timer.lap();
@@ -89,4 +92,5 @@ test {
     _ = @import("./day3.zig");
     _ = @import("./day4.zig");
     _ = @import("./day5.zig");
+    _ = @import("./day6.zig");
 }
