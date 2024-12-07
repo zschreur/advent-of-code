@@ -6,6 +6,7 @@ const Direction = enum(u2) { N, S, E, W };
 const Map = struct {
     east_west: []std.ArrayList(usize),
     north_south: []std.ArrayList(usize),
+    map: [][]bool,
     gaurd_position: struct { pos: Pos, dir: Direction },
     allocator: std.mem.Allocator,
 
@@ -21,6 +22,11 @@ const Map = struct {
             a.deinit();
         }
         self.allocator.free(self.north_south);
+
+        for (self.map) |row| {
+            self.allocator.free(row);
+        }
+        self.allocator.free(self.map);
     }
 
     fn init(input: []const u8, allocator: std.mem.Allocator) !Self {
@@ -29,6 +35,11 @@ const Map = struct {
         // assume square
         const size = line_it.peek().?.len;
 
+        const map = try allocator.alloc([]bool, size);
+        for (0..size) |y| {
+            map[y] = try allocator.alloc(bool, size);
+            @memset(map[y], false);
+        }
         var east_west = try allocator.alloc(std.ArrayList(usize), size);
         var north_south = try allocator.alloc(std.ArrayList(usize), size);
         for (0..size) |i| {
@@ -48,6 +59,7 @@ const Map = struct {
                     '#' => {
                         try east_west[y].append(x);
                         try north_south[x].append(y);
+                        map[y][x] = true;
                     },
                     '^' => {
                         gaurd_pos = .{ .pos = pos, .dir = .N };
@@ -71,20 +83,23 @@ const Map = struct {
             .north_south = north_south,
             .allocator = allocator,
             .gaurd_position = gaurd_pos.?,
+            .map = map,
         };
     }
 };
 
 const Record = struct {
-    visited: []bool,
+    visited: []u4,
     allocator: std.mem.Allocator,
     map: Map,
     count: usize = 0,
+    obstacle_location_count: usize = 0,
 
     const Self = @This();
 
     fn init(a: anytype, m: Map) !Self {
-        const visited = try a.alloc(bool, m.east_west.len * m.north_south.len);
+        const visited = try a.alloc(u4, m.east_west.len * m.north_south.len);
+        @memset(visited, 0);
 
         return .{ .visited = visited, .allocator = a, .map = m };
     }
@@ -102,12 +117,39 @@ const Record = struct {
         }
     }
 
-    fn markVisited(self: *Self, pos: Pos) void {
+    fn markVisited(self: *Self, comptime dir: Direction, pos: Pos) void {
+        // if I am marking a spot as visited, can I check that a surrounding spot would
+        // be a place to set a block for a loop?
+        //
+        // If a 90deg turn would make a loop and there is no wall in front, then mark spot
+        //
         const size = self.map.east_west.len;
         const i = pos.y * size + pos.x;
-        if (!self.visited[i]) {
-            self.visited[i] = true;
-            self.count += 1;
+        const v = self.visited[i];
+        if (v == 0) self.count += 1;
+
+        self.checkForLoop(dir, pos);
+        self.visited[i] = switch (dir) {
+            .N => v | 0b1000,
+            .S => v | 0b0100,
+            .E => v | 0b0010,
+            .W => v | 0b0001,
+        };
+    }
+
+    fn checkForLoop(self: *Self, comptime dir: Direction, pos: Pos) void {
+        const size = self.map.east_west.len;
+        const i = pos.y * size + pos.x;
+        const v = self.visited[i];
+
+        if (switch (dir) {
+            .N => (v & 0b0010) != 0 and pos.y > 0 and !self.map.map[pos.y - 1][pos.x],
+            .S => (v & 0b0001) != 0 and pos.y < size - 1 and !self.map.map[pos.y + 1][pos.x],
+            .E => (v & 0b0100) != 0 and pos.x < size - 1 and !self.map.map[pos.y][pos.x + 1],
+            .W => (v & 0b1000) != 0 and pos.x > 0 and !self.map.map[pos.y][pos.x - 1],
+        }) {
+            std.debug.print("{any} {any}\n", .{ dir, pos });
+            self.obstacle_location_count += 1;
         }
     }
 };
@@ -116,6 +158,7 @@ fn predictRoute(map: Map, allocator: std.mem.Allocator) !usize {
     var record = try Record.init(allocator, map);
     defer record.deinit();
 
+    const map_width = map.east_west.len;
     var gaurd_pos: @FieldType(Map, "gaurd_position") = map.gaurd_position;
     while (true) {
         const pos = gaurd_pos.pos;
@@ -141,13 +184,10 @@ fn predictRoute(map: Map, allocator: std.mem.Allocator) !usize {
             .E, .W => std.sort.upperBound(usize, lane, pos.x, S.compare),
         };
 
-        const map_width = map.east_west.len;
         switch (dir) {
             .N => {
                 const y = if (p == 0) 0 else lane[p - 1] + 1;
-                for (y..pos.y + 1) |my| {
-                    record.markVisited(.{ .x = pos.x, .y = my });
-                }
+                record.recordWalk(.N, pos, pos.y + 1 - y);
 
                 if (p == 0) {
                     break;
@@ -157,9 +197,7 @@ fn predictRoute(map: Map, allocator: std.mem.Allocator) !usize {
             },
             .S => {
                 const y = if (p == lane.len) map_width - 1 else lane[p] - 1;
-                for (pos.y..y + 1) |my| {
-                    record.markVisited(.{ .x = pos.x, .y = my });
-                }
+                record.recordWalk(.S, pos, y + 1 - pos.y);
 
                 if (p == lane.len) {
                     break;
@@ -169,9 +207,7 @@ fn predictRoute(map: Map, allocator: std.mem.Allocator) !usize {
             },
             .E => {
                 const x = if (p == lane.len) map_width - 1 else lane[p] - 1;
-                for (pos.x..x + 1) |mx| {
-                    record.markVisited(.{ .x = mx, .y = pos.y });
-                }
+                record.recordWalk(.E, pos, x + 1 - pos.x);
 
                 if (p == lane.len) {
                     break;
@@ -181,9 +217,7 @@ fn predictRoute(map: Map, allocator: std.mem.Allocator) !usize {
             },
             .W => {
                 const x = if (p == 0) 0 else lane[p - 1] + 1;
-                for (x..pos.x + 1) |mx| {
-                    record.markVisited(.{ .x = mx, .y = pos.y });
-                }
+                record.recordWalk(.W, pos, pos.x + 1 - x);
 
                 if (p == 0) {
                     break;
@@ -193,6 +227,15 @@ fn predictRoute(map: Map, allocator: std.mem.Allocator) !usize {
             },
         }
     }
+
+    // std.debug.print("\n", .{});
+    // for (0..map_width) |y| {
+    // for (0..map_width) |x| {
+    // const i = y * map_width + x;
+    // std.debug.print("{x}", .{record.visited[i]});
+    // }
+    // std.debug.print("\n", .{});
+    // }
 
     return record.count;
 }
