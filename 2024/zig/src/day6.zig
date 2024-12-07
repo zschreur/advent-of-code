@@ -75,34 +75,149 @@ const Map = struct {
     }
 };
 
+const Range = struct {
+    start: usize,
+    end: usize,
+    history: enum(u2) {
+        None,
+        Dec,
+        Inc,
+        Both,
+    } = .None,
+};
+
 const Record = struct {
     visited: []bool,
+    east_west: []std.ArrayList(Range),
+    north_south: []std.ArrayList(Range),
     allocator: std.mem.Allocator,
     map: Map,
     count: usize = 0,
+    obstacle_count: usize = 0,
 
     const Self = @This();
 
-    fn init(a: anytype, m: Map) !Self {
-        const visited = try a.alloc(bool, m.east_west.len * m.north_south.len);
+    fn init(allocator: anytype, map: Map) !Self {
+        const map_size = map.east_west.len;
+        const visited = try allocator.alloc(bool, map_size * map_size);
+        @memset(visited, false);
 
-        return .{ .visited = visited, .allocator = a, .map = m };
+        const east_west = try allocator.alloc(std.ArrayList(Range), map.east_west.len);
+        const north_south = try allocator.alloc(std.ArrayList(Range), map.north_south.len);
+
+        for (map.east_west, 0..) |row, y| {
+            var ary = std.ArrayList(Range).init(allocator);
+
+            var prev: ?usize = null;
+            for (row.items) |n| {
+                if (prev) |p| {
+                    if (n - p > 1) {
+                        try ary.append(.{ .start = p + 1, .end = n - 1 });
+                    }
+                } else if (n > 0) {
+                    try ary.append(.{ .start = 0, .end = n - 1 });
+                }
+                prev = n;
+            }
+            if (prev != null and prev.? < map_size - 1) {
+                try ary.append(.{ .start = prev.? + 1, .end = map_size - 1 });
+            } else if (prev == null) {
+                try ary.append(.{ .start = 0, .end = map_size - 1 });
+            }
+
+            east_west[y] = ary;
+        }
+
+        for (map.north_south, 0..) |col, x| {
+            var ary = std.ArrayList(Range).init(allocator);
+
+            var prev: ?usize = null;
+            for (col.items) |n| {
+                if (prev) |p| {
+                    if (n - p > 1) {
+                        try ary.append(.{ .start = p + 1, .end = n - 1 });
+                    }
+                } else if (n > 0) {
+                    try ary.append(.{ .start = 0, .end = n - 1 });
+                }
+                prev = n;
+            }
+            if (prev != null and prev.? < map_size - 1) {
+                try ary.append(.{ .start = prev.? + 1, .end = map_size - 1 });
+            } else if (prev == null) {
+                try ary.append(.{ .start = 0, .end = map_size - 1 });
+            }
+
+            north_south[x] = ary;
+        }
+
+        return .{
+            .visited = visited,
+            .allocator = allocator,
+            .map = map,
+            .east_west = east_west,
+            .north_south = north_south,
+        };
     }
 
     fn deinit(self: *Self) void {
+        for (self.east_west) |a| {
+            a.deinit();
+        }
+        self.allocator.free(self.east_west);
+        for (self.north_south) |a| {
+            a.deinit();
+        }
+        self.allocator.free(self.north_south);
+
         self.allocator.free(self.visited);
     }
 
-    fn recordWalk(self: *Self, dir: Direction, start: Pos, count: usize) void {
+    fn recordWalk(self: *Self, comptime dir: Direction, start: Pos, count: usize) void {
         switch (dir) {
-            .N => for (0..count) |i| self.markVisited(.{ .x = start.x - i - 1, .y = start.y }),
-            .S => for (0..count) |i| self.markVisited(.{ .x = start.x + i + 1, .y = start.y }),
-            .E => for (0..count) |i| self.markVisited(.{ .x = start.x, .y = start.y + i + 1 }),
-            .E => for (0..count) |i| self.markVisited(.{ .x = start.x, .y = start.y - i - 1 }),
+            .N => for (0..count) |i| self.markVisited(dir, .{ .y = start.y - i, .x = start.x }),
+            .S => for (0..count) |i| self.markVisited(dir, .{ .y = start.y + i, .x = start.x }),
+            .E => for (0..count) |i| self.markVisited(dir, .{ .y = start.y, .x = start.x + i }),
+            .W => for (0..count) |i| self.markVisited(dir, .{ .y = start.y, .x = start.x - i }),
         }
     }
 
-    fn markVisited(self: *Self, pos: Pos) void {
+    fn markVisited(self: *Self, comptime dir: Direction, pos: Pos) void {
+        const v = switch (dir) {
+            .N, .S => b: {
+                const row = self.east_west[pos.y];
+                for (row.items) |r| {
+                    if (r.start <= pos.x and r.end >= pos.x) break :b r;
+                }
+
+                unreachable;
+            },
+            .E, .W => b: {
+                const col = self.east_west[pos.y];
+                for (col.items) |r| {
+                    if (r.start <= pos.y and r.end >= pos.y) break :b r;
+                }
+
+                unreachable;
+            },
+        };
+
+        switch (dir) {
+            .N, .E => {
+                if (v.history == .Inc or v.history == .Both) self.obstacle_count += 1;
+            },
+            .S, .W => {
+                if (v.history == .Dec or v.history == .Both) self.obstacle_count += 1;
+            },
+        }
+
+        switch (dir) {
+            .N => {},
+            .S => {},
+            .E => {},
+            .W => {},
+        }
+
         const size = self.map.east_west.len;
         const i = pos.y * size + pos.x;
         if (!self.visited[i]) {
@@ -116,6 +231,7 @@ fn predictRoute(map: Map, allocator: std.mem.Allocator) !usize {
     var record = try Record.init(allocator, map);
     defer record.deinit();
 
+    const map_width = map.east_west.len;
     var gaurd_pos: @FieldType(Map, "gaurd_position") = map.gaurd_position;
     while (true) {
         const pos = gaurd_pos.pos;
@@ -141,13 +257,10 @@ fn predictRoute(map: Map, allocator: std.mem.Allocator) !usize {
             .E, .W => std.sort.upperBound(usize, lane, pos.x, S.compare),
         };
 
-        const map_width = map.east_west.len;
         switch (dir) {
             .N => {
                 const y = if (p == 0) 0 else lane[p - 1] + 1;
-                for (y..pos.y + 1) |my| {
-                    record.markVisited(.{ .x = pos.x, .y = my });
-                }
+                record.recordWalk(.N, pos, pos.y + 1 - y);
 
                 if (p == 0) {
                     break;
@@ -157,9 +270,7 @@ fn predictRoute(map: Map, allocator: std.mem.Allocator) !usize {
             },
             .S => {
                 const y = if (p == lane.len) map_width - 1 else lane[p] - 1;
-                for (pos.y..y + 1) |my| {
-                    record.markVisited(.{ .x = pos.x, .y = my });
-                }
+                record.recordWalk(.S, pos, y + 1 - pos.y);
 
                 if (p == lane.len) {
                     break;
@@ -169,9 +280,7 @@ fn predictRoute(map: Map, allocator: std.mem.Allocator) !usize {
             },
             .E => {
                 const x = if (p == lane.len) map_width - 1 else lane[p] - 1;
-                for (pos.x..x + 1) |mx| {
-                    record.markVisited(.{ .x = mx, .y = pos.y });
-                }
+                record.recordWalk(.E, pos, x + 1 - pos.x);
 
                 if (p == lane.len) {
                     break;
@@ -181,9 +290,7 @@ fn predictRoute(map: Map, allocator: std.mem.Allocator) !usize {
             },
             .W => {
                 const x = if (p == 0) 0 else lane[p - 1] + 1;
-                for (x..pos.x + 1) |mx| {
-                    record.markVisited(.{ .x = mx, .y = pos.y });
-                }
+                record.recordWalk(.W, pos, pos.x + 1 - x);
 
                 if (p == 0) {
                     break;
