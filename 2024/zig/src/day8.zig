@@ -90,8 +90,7 @@ pub fn partOne(input: []const u8, allocator: std.mem.Allocator) !u64 {
 
     var freq_iter = grid.frequencies.iterator();
     while (freq_iter.next()) |kv| {
-        // const key = kv.key_ptr.*; // specific frequency
-        const val = kv.value_ptr.*; // all the points for that frequency
+        const val = kv.value_ptr.*;
 
         const slice = val.slice();
         for (0..slice.len) |i| {
@@ -120,10 +119,52 @@ pub fn partOne(input: []const u8, allocator: std.mem.Allocator) !u64 {
 }
 
 pub fn partTwo(input: []const u8, allocator: std.mem.Allocator) !u64 {
-    _ = &input;
-    _ = &allocator;
+    var grid = try Grid.init(input, allocator);
+    defer grid.deinit();
 
-    return error.NotImplemented;
+    const antinodes = try allocator.alloc(bool, grid.map_size * grid.map_size);
+    defer allocator.free(antinodes);
+
+    var freq_iter = grid.frequencies.iterator();
+    while (freq_iter.next()) |kv| {
+        const val = kv.value_ptr.*;
+
+        const slice = val.slice();
+        for (0..slice.len) |i| {
+            const a = slice.get(i);
+            antinodes[a.index(grid.map_size)] = true;
+            for ((i + 1)..slice.len) |j| {
+                const b = slice.get(j);
+                antinodes[b.index(grid.map_size)] = true;
+
+                const delta = b.sub(a);
+
+                var prev = a;
+                while (prev.subDelta(delta)) |p| {
+                    if (p.x < grid.map_size and p.y < grid.map_size) {
+                        antinodes[p.index(grid.map_size)] = true;
+                    } else {
+                        break;
+                    }
+
+                    prev = p;
+                }
+
+                prev = b;
+                while (prev.addDelta(delta)) |p| {
+                    if (p.x < grid.map_size and p.y < grid.map_size) {
+                        antinodes[p.index(grid.map_size)] = true;
+                    } else {
+                        break;
+                    }
+
+                    prev = p;
+                }
+            }
+        }
+    }
+
+    return std.mem.count(bool, antinodes, &[_]bool{true});
 }
 
 const sample_input =
@@ -147,5 +188,5 @@ test "part one" {
 }
 
 test "part two" {
-    return error.SkipZigTest;
+    try std.testing.expectEqual(34, partTwo(sample_input, testing.allocator));
 }
