@@ -1,6 +1,6 @@
 pub fn IndexedIterator(T: type) type {
     return struct {
-        index: usize,
+        index: usize = 0,
         iter: T,
 
         const IndexAndValue = struct {
@@ -9,10 +9,6 @@ pub fn IndexedIterator(T: type) type {
         };
 
         const Self = @This();
-
-        pub fn init(iter: anytype, start_index: usize) Self {
-            return .{ .index = start_index, .iter = iter };
-        }
 
         pub fn next(self: *Self) ?IndexAndValue {
             if (self.iter.next()) |value| {
@@ -26,4 +22,3 @@ pub fn IndexedIterator(T: type) type {
         }
     };
 }
-

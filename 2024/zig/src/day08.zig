@@ -53,7 +53,7 @@ const Grid = struct {
         };
         errdefer self.deinit();
 
-        var indexed_iter = IndexedIterator(@TypeOf(it)).init(it, 0);
+        var indexed_iter = IndexedIterator(@TypeOf(it)){ .iter = it };
         while (indexed_iter.next()) |next| {
             const line = next.value;
             const y = next.index;
