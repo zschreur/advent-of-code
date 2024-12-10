@@ -22,3 +22,7 @@ pub fn IndexedIterator(T: type) type {
         }
     };
 }
+
+pub fn indexedIterator(iter: anytype) IndexedIterator(@TypeOf(iter)) {
+    return IndexedIterator(@TypeOf(iter)){ .iter = iter };
+}
