@@ -1,13 +1,13 @@
 const std = @import("std");
-const day0 = @import("./day0.zig");
-const day1 = @import("./day1.zig");
-const day2 = @import("./day2.zig");
-const day3 = @import("./day3.zig");
-const day4 = @import("./day4.zig");
-const day5 = @import("./day5.zig");
-const day6 = @import("./day6.zig");
-const day7 = @import("./day7.zig");
-const day8 = @import("./day8.zig");
+const day0 = @import("./day00.zig");
+const day1 = @import("./day01.zig");
+const day2 = @import("./day02.zig");
+const day3 = @import("./day03.zig");
+const day4 = @import("./day04.zig");
+const day5 = @import("./day05.zig");
+const day6 = @import("./day06.zig");
+const day7 = @import("./day07.zig");
+const day8 = @import("./day08.zig");
 
 const label_color = "\x1b[38;5;250m";
 const time_color = "\x1b[38;5;38m";
@@ -92,13 +92,13 @@ pub fn main() !void {
 }
 
 test {
-    _ = @import("./day0.zig");
-    _ = @import("./day1.zig");
-    _ = @import("./day2.zig");
-    _ = @import("./day3.zig");
-    _ = @import("./day4.zig");
-    _ = @import("./day5.zig");
-    _ = @import("./day6.zig");
-    _ = @import("./day7.zig");
-    _ = @import("./day8.zig");
+    _ = @import("./day00.zig");
+    _ = @import("./day01.zig");
+    _ = @import("./day02.zig");
+    _ = @import("./day03.zig");
+    _ = @import("./day04.zig");
+    _ = @import("./day05.zig");
+    _ = @import("./day06.zig");
+    _ = @import("./day07.zig");
+    _ = @import("./day08.zig");
 }
